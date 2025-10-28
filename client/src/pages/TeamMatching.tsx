@@ -3,18 +3,43 @@ import { FilterSidebar } from "@/components/FilterSidebar";
 import { Button } from "@/components/ui/button";
 import { SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+
+interface PaginatedResponse {
+  data: User[];
+  total: number;
+  hasMore: boolean;
+}
 
 export default function TeamMatching() {
   const [showFilters, setShowFilters] = useState(false);
   const { toast } = useToast();
 
-  const { data: users = [], isLoading } = useQuery<User[]>({
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery<PaginatedResponse>({
     queryKey: ["/api/users"],
+    queryFn: async ({ pageParam = 0 }) => {
+      const res = await fetch(
+        `/api/users?limit=20&offset=${pageParam}`,
+        { credentials: "include" }
+      );
+      return res.json();
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.hasMore) return undefined;
+      return allPages.length * 20;
+    },
+    initialPageParam: 0,
   });
 
+  const users = data?.pages.flatMap(page => page.data) ?? [];
   const students = users.filter(u => u.major || u.bio || (u.skills && u.skills.length > 0));
 
   if (isLoading) {
@@ -83,18 +108,18 @@ export default function TeamMatching() {
               </div>
             )}
 
-            <div className="mt-8 flex justify-center">
-              <Button 
-                variant="outline" 
-                data-testid="button-load-more"
-                onClick={() => toast({
-                  title: "All students loaded",
-                  description: "You're viewing all available students.",
-                })}
-              >
-                Load More
-              </Button>
-            </div>
+            {hasNextPage && (
+              <div className="mt-8 flex justify-center">
+                <Button 
+                  variant="outline" 
+                  data-testid="button-load-more"
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
+                >
+                  {isFetchingNextPage ? "Loading..." : "Load More"}
+                </Button>
+              </div>
+            )}
           </main>
         </div>
       </div>

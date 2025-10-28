@@ -39,8 +39,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/users', isAuthenticated, async (req, res) => {
     try {
       const query = req.query.q as string | undefined;
-      const users = await storage.searchUsers(query);
-      res.json(users);
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
+      const result = await storage.searchUsers(query, limit, offset);
+      res.json(result);
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ message: "Failed to fetch users" });
@@ -64,8 +66,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       const approvedOnly = req.query.approved === 'true' || !user?.isAdmin;
-      const projects = await storage.getAllProjects(approvedOnly);
-      res.json(projects);
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
+      const result = await storage.getAllProjects(approvedOnly, limit, offset);
+      res.json(result);
     } catch (error) {
       console.error("Error fetching projects:", error);
       res.status(500).json({ message: "Failed to fetch projects" });
@@ -151,8 +155,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       const approvedOnly = req.query.approved === 'true' || !user?.isAdmin;
-      const startups = await storage.getAllStartups(approvedOnly);
-      res.json(startups);
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
+      const result = await storage.getAllStartups(approvedOnly, limit, offset);
+      res.json(result);
     } catch (error) {
       console.error("Error fetching startups:", error);
       res.status(500).json({ message: "Failed to fetch startups" });

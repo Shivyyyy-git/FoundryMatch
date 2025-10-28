@@ -13,20 +13,26 @@ import {
   type InsertMessage,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, or, ilike, sql } from "drizzle-orm";
+import { eq, desc, and, or, ilike, sql, count } from "drizzle-orm";
+
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  hasMore: boolean;
+}
 
 export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUserProfile(id: string, data: Partial<User>): Promise<User>;
-  getAllUsers(): Promise<User[]>;
-  searchUsers(query?: string): Promise<User[]>;
+  getAllUsers(limit?: number, offset?: number): Promise<PaginatedResult<User>>;
+  searchUsers(query?: string, limit?: number, offset?: number): Promise<PaginatedResult<User>>;
   
   // Project operations
   createProject(project: InsertProject, userId: string): Promise<Project>;
   getProject(id: string): Promise<Project | undefined>;
-  getAllProjects(approvedOnly?: boolean): Promise<Project[]>;
+  getAllProjects(approvedOnly?: boolean, limit?: number, offset?: number): Promise<PaginatedResult<Project>>;
   getUserProjects(userId: string): Promise<Project[]>;
   updateProject(id: string, data: Partial<Project>): Promise<Project>;
   deleteProject(id: string): Promise<void>;
@@ -35,7 +41,7 @@ export interface IStorage {
   // Startup operations
   createStartup(startup: InsertStartup, userId: string): Promise<Startup>;
   getStartup(id: string): Promise<Startup | undefined>;
-  getAllStartups(approvedOnly?: boolean): Promise<Startup[]>;
+  getAllStartups(approvedOnly?: boolean, limit?: number, offset?: number): Promise<PaginatedResult<Startup>>;
   getUserStartups(userId: string): Promise<Startup[]>;
   updateStartup(id: string, data: Partial<Startup>): Promise<Startup>;
   deleteStartup(id: string): Promise<void>;
@@ -79,25 +85,54 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async getAllUsers(): Promise<User[]> {
-    return db.select().from(users).orderBy(desc(users.createdAt));
-  }
-
-  async searchUsers(query?: string): Promise<User[]> {
-    if (!query) {
-      return this.getAllUsers();
-    }
-    return db
+  async getAllUsers(limit = 20, offset = 0): Promise<PaginatedResult<User>> {
+    const [totalResult] = await db.select({ count: count() }).from(users);
+    const total = Number(totalResult.count);
+    
+    const data = await db
       .select()
       .from(users)
-      .where(
-        or(
-          ilike(users.firstName, `%${query}%`),
-          ilike(users.lastName, `%${query}%`),
-          ilike(users.major, `%${query}%`)
-        )
-      )
-      .orderBy(desc(users.createdAt));
+      .orderBy(desc(users.createdAt))
+      .limit(limit)
+      .offset(offset);
+    
+    return {
+      data,
+      total,
+      hasMore: offset + data.length < total,
+    };
+  }
+
+  async searchUsers(query?: string, limit = 20, offset = 0): Promise<PaginatedResult<User>> {
+    if (!query) {
+      return this.getAllUsers(limit, offset);
+    }
+    
+    const whereClause = or(
+      ilike(users.firstName, `%${query}%`),
+      ilike(users.lastName, `%${query}%`),
+      ilike(users.major, `%${query}%`)
+    );
+    
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(users)
+      .where(whereClause);
+    const total = Number(totalResult.count);
+    
+    const data = await db
+      .select()
+      .from(users)
+      .where(whereClause)
+      .orderBy(desc(users.createdAt))
+      .limit(limit)
+      .offset(offset);
+    
+    return {
+      data,
+      total,
+      hasMore: offset + data.length < total,
+    };
   }
 
   // Project operations
@@ -114,15 +149,46 @@ export class DatabaseStorage implements IStorage {
     return project;
   }
 
-  async getAllProjects(approvedOnly = false): Promise<Project[]> {
+  async getAllProjects(approvedOnly = false, limit = 20, offset = 0): Promise<PaginatedResult<Project>> {
     if (approvedOnly) {
-      return db
+      const [totalResult] = await db
+        .select({ count: count() })
+        .from(projects)
+        .where(eq(projects.isApproved, true));
+      const total = Number(totalResult.count);
+      
+      const data = await db
         .select()
         .from(projects)
         .where(eq(projects.isApproved, true))
-        .orderBy(desc(projects.createdAt));
+        .orderBy(desc(projects.createdAt))
+        .limit(limit)
+        .offset(offset);
+      
+      return {
+        data,
+        total,
+        hasMore: offset + data.length < total,
+      };
+    } else {
+      const [totalResult] = await db
+        .select({ count: count() })
+        .from(projects);
+      const total = Number(totalResult.count);
+      
+      const data = await db
+        .select()
+        .from(projects)
+        .orderBy(desc(projects.createdAt))
+        .limit(limit)
+        .offset(offset);
+      
+      return {
+        data,
+        total,
+        hasMore: offset + data.length < total,
+      };
     }
-    return db.select().from(projects).orderBy(desc(projects.createdAt));
   }
 
   async getUserProjects(userId: string): Promise<Project[]> {
@@ -169,15 +235,46 @@ export class DatabaseStorage implements IStorage {
     return startup;
   }
 
-  async getAllStartups(approvedOnly = false): Promise<Startup[]> {
+  async getAllStartups(approvedOnly = false, limit = 20, offset = 0): Promise<PaginatedResult<Startup>> {
     if (approvedOnly) {
-      return db
+      const [totalResult] = await db
+        .select({ count: count() })
+        .from(startups)
+        .where(eq(startups.isApproved, true));
+      const total = Number(totalResult.count);
+      
+      const data = await db
         .select()
         .from(startups)
         .where(eq(startups.isApproved, true))
-        .orderBy(desc(startups.createdAt));
+        .orderBy(desc(startups.createdAt))
+        .limit(limit)
+        .offset(offset);
+      
+      return {
+        data,
+        total,
+        hasMore: offset + data.length < total,
+      };
+    } else {
+      const [totalResult] = await db
+        .select({ count: count() })
+        .from(startups);
+      const total = Number(totalResult.count);
+      
+      const data = await db
+        .select()
+        .from(startups)
+        .orderBy(desc(startups.createdAt))
+        .limit(limit)
+        .offset(offset);
+      
+      return {
+        data,
+        total,
+        hasMore: offset + data.length < total,
+      };
     }
-    return db.select().from(startups).orderBy(desc(startups.createdAt));
   }
 
   async getUserStartups(userId: string): Promise<Startup[]> {

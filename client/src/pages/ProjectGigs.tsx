@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Search, Plus } from "lucide-react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { Project, InsertProject } from "@shared/schema";
 import { useState } from "react";
@@ -35,18 +35,40 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertProjectSchema } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
+interface PaginatedResponse {
+  data: Project[];
+  total: number;
+  hasMore: boolean;
+}
+
 export default function ProjectGigs() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
-  const { data: projects = [], isLoading } = useQuery<Project[]>({
-    queryKey: ["/api/projects"],
-    queryFn: async () => {
-      const res = await fetch("/api/projects?approved=true", { credentials: "include" });
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery<PaginatedResponse>({
+    queryKey: ["/api/projects", "approved"],
+    queryFn: async ({ pageParam = 0 }) => {
+      const res = await fetch(
+        `/api/projects?approved=true&limit=20&offset=${pageParam}`,
+        { credentials: "include" }
+      );
       return res.json();
     },
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.hasMore) return undefined;
+      return allPages.length * 20;
+    },
+    initialPageParam: 0,
   });
+
+  const projects = data?.pages.flatMap(page => page.data) ?? [];
 
   const createProjectMutation = useMutation({
     mutationFn: async (data: InsertProject) => {
@@ -383,11 +405,18 @@ export default function ProjectGigs() {
           </div>
         )}
 
-        <div className="mt-8 flex justify-center">
-          <Button variant="outline" data-testid="button-load-more">
-            Load More Projects
-          </Button>
-        </div>
+        {hasNextPage && (
+          <div className="mt-8 flex justify-center">
+            <Button 
+              variant="outline" 
+              onClick={() => fetchNextPage()}
+              disabled={isFetchingNextPage}
+              data-testid="button-load-more"
+            >
+              {isFetchingNextPage ? "Loading..." : "Load More Projects"}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

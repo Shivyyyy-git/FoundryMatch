@@ -26,27 +26,49 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Search, Plus } from "lucide-react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { Startup, InsertStartup } from "@shared/schema";
+import { Startup, InsertStartup } from "@shared/schema";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertStartupSchema } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
+interface PaginatedResponse {
+  data: Startup[];
+  total: number;
+  hasMore: boolean;
+}
+
 export default function StartupShowcase() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
-  const { data: startups = [], isLoading } = useQuery<Startup[]>({
-    queryKey: ["/api/startups"],
-    queryFn: async () => {
-      const res = await fetch("/api/startups?approved=true", { credentials: "include" });
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery<PaginatedResponse>({
+    queryKey: ["/api/startups", "approved"],
+    queryFn: async ({ pageParam = 0 }) => {
+      const res = await fetch(
+        `/api/startups?approved=true&limit=20&offset=${pageParam}`,
+        { credentials: "include" }
+      );
       return res.json();
     },
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage.hasMore) return undefined;
+      return allPages.length * 20;
+    },
+    initialPageParam: 0,
   });
+
+  const startups = data?.pages.flatMap(page => page.data) ?? [];
 
   const createStartupMutation = useMutation({
     mutationFn: async (data: InsertStartup) => {
@@ -298,11 +320,18 @@ export default function StartupShowcase() {
           </div>
         )}
 
-        <div className="mt-8 flex justify-center">
-          <Button variant="outline" data-testid="button-load-more">
-            Load More Startups
-          </Button>
-        </div>
+        {hasNextPage && (
+          <div className="mt-8 flex justify-center">
+            <Button 
+              variant="outline" 
+              onClick={() => fetchNextPage()}
+              disabled={isFetchingNextPage}
+              data-testid="button-load-more"
+            >
+              {isFetchingNextPage ? "Loading..." : "Load More Startups"}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
