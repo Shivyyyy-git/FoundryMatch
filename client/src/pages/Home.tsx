@@ -74,13 +74,11 @@ export default function Home() {
                 Check out what Rochester students are building
               </p>
             </div>
-            <Link href="/startup-showcase">
-              <a data-testid="link-view-all-startups">
-                <Button variant="outline">
-                  View All
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </a>
+            <Link href="/startup-showcase" data-testid="link-view-all-startups">
+              <Button variant="outline">
+                View All
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
             </Link>
           </div>
 
@@ -123,13 +121,11 @@ export default function Home() {
                 Join exciting projects and gain real-world experience
               </p>
             </div>
-            <Link href="/project-gigs">
-              <a data-testid="link-view-all-projects">
-                <Button variant="outline">
-                  View All
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </a>
+            <Link href="/project-gigs" data-testid="link-view-all-projects">
+              <Button variant="outline">
+                View All
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
             </Link>
           </div>
 

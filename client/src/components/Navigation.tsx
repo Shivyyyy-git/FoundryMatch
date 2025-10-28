@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "./ThemeProvider";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   Users, 
   Briefcase, 
@@ -20,11 +21,11 @@ import {
   User, 
   LogOut 
 } from "lucide-react";
-import avatar1 from "@assets/generated_images/Student_profile_avatar_1_237efb63.png";
 
 export function Navigation() {
   const [location] = useLocation();
   const { theme, toggleTheme } = useTheme();
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   const navItems = [
     { path: "/", label: "Home", icon: null },
@@ -35,27 +36,48 @@ export function Navigation() {
     { path: "/admin", label: "Admin Panel", icon: Settings },
   ];
 
+  const handleLogin = () => {
+    window.location.href = "/api/login";
+  };
+
+  const handleLogout = () => {
+    window.location.href = "/api/logout";
+  };
+
+  const getUserInitials = () => {
+    if (!user) return "U";
+    const first = user.firstName?.[0] || "";
+    const last = user.lastName?.[0] || "";
+    return (first + last).toUpperCase() || user.email?.[0]?.toUpperCase() || "U";
+  };
+
+  const getUserDisplayName = () => {
+    if (!user) return "User";
+    if (user.firstName || user.lastName) {
+      return `${user.firstName || ""} ${user.lastName || ""}`.trim();
+    }
+    return user.email || "User";
+  };
+
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4">
           <div className="flex items-center gap-8">
-            <Link href="/">
-              <a className="flex items-center gap-2 hover-elevate active-elevate-2 rounded-lg px-2 py-1" data-testid="link-home">
-                <Rocket className="h-6 w-6 text-primary" />
-                <span className="text-xl font-bold text-foreground">
-                  Foundry StartupMatch
-                </span>
-              </a>
+            <Link href="/" className="flex items-center gap-2 hover-elevate active-elevate-2 rounded-lg px-2 py-1" data-testid="link-home">
+              <Rocket className="h-6 w-6 text-primary" />
+              <span className="text-xl font-bold text-foreground">
+                Foundry StartupMatch
+              </span>
             </Link>
             
-            <div className="hidden md:flex items-center gap-1">
-              {navItems.slice(1).map((item) => {
-                const Icon = item.icon;
-                const isActive = location === item.path;
-                return (
-                  <Link key={item.path} href={item.path}>
-                    <a data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}>
+            {isAuthenticated && (
+              <div className="hidden md:flex items-center gap-1">
+                {navItems.slice(1).map((item) => {
+                  const Icon = item.icon;
+                  const isActive = location === item.path;
+                  return (
+                    <Link key={item.path} href={item.path} data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -64,11 +86,11 @@ export function Navigation() {
                         {Icon && <Icon className="h-4 w-4 mr-2" />}
                         {item.label}
                       </Button>
-                    </a>
-                  </Link>
-                );
-              })}
-            </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -85,31 +107,53 @@ export function Navigation() {
               )}
             </Button>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="rounded-full" data-testid="button-user-menu">
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src={avatar1} alt="User" />
-                    <AvatarFallback>JD</AvatarFallback>
-                  </Avatar>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem data-testid="menu-profile">
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem data-testid="menu-settings">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem data-testid="menu-logout">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {!isLoading && !isAuthenticated && (
+              <Button
+                onClick={handleLogin}
+                data-testid="button-login-nav"
+              >
+                Sign In
+              </Button>
+            )}
+
+            {isAuthenticated && user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="rounded-full" data-testid="button-user-menu">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={user.profileImageUrl || undefined} alt={getUserDisplayName()} />
+                      <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-2 py-1.5" data-testid="user-display-info">
+                    <p className="text-sm font-medium text-foreground" data-testid="text-user-name">
+                      {getUserDisplayName()}
+                    </p>
+                    {user.email && (
+                      <p className="text-xs text-muted-foreground" data-testid="text-user-email">
+                        {user.email}
+                      </p>
+                    )}
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem data-testid="menu-profile">
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem data-testid="menu-settings">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} data-testid="menu-logout">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
       </div>
