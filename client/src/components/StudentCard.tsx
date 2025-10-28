@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserPlus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface StudentCardProps {
   name: string;
@@ -24,6 +25,21 @@ export function StudentCard({
   availability = "Available"
 }: StudentCardProps) {
   const initials = name.split(" ").map(n => n[0]).join("").toUpperCase();
+  const { toast } = useToast();
+
+  const handleViewProfile = () => {
+    toast({
+      title: "Profile View",
+      description: `Viewing ${name}'s full profile...`,
+    });
+  };
+
+  const handleConnect = () => {
+    toast({
+      title: "Connection Request Sent!",
+      description: `Your connection request has been sent to ${name}.`,
+    });
+  };
   
   return (
     <Card className="p-6 hover-elevate" data-testid={`card-student-${name.toLowerCase().replace(/\s+/g, '-')}`}>
@@ -75,6 +91,7 @@ export function StudentCard({
             size="sm" 
             className="flex-1"
             data-testid="button-view-profile"
+            onClick={handleViewProfile}
           >
             View Profile
           </Button>
@@ -82,6 +99,7 @@ export function StudentCard({
             size="sm" 
             className="flex-1"
             data-testid="button-connect"
+            onClick={handleConnect}
           >
             <UserPlus className="h-4 w-4 mr-1" />
             Connect
