@@ -1,165 +1,218 @@
-# Foundry StartupMatch Design Guidelines
+# MatchUp by Ain Center - Design Guidelines
 
 ## Design Approach
 
-**Selected Approach:** Reference-Based with LinkedIn + ProductHunt inspiration
+**Selected Approach:** Reference-Based (LinkedIn-Inspired)
 
-Drawing from LinkedIn's professional networking patterns and ProductHunt's startup showcase aesthetics, combined with modern university platform sensibilities. The design balances professional credibility with energetic startup culture.
+Drawing heavily from LinkedIn's professional networking patterns with adaptations for university context. The design prioritizes trust, clarity, and excellent information hierarchy while maintaining approachability for students.
 
 **Key Design Principles:**
-- Trust & Credibility: Clean, professional interfaces that inspire confidence
-- Discovery-Focused: Card-based layouts that showcase opportunities prominently
-- Action-Oriented: Clear CTAs driving connections and applications
-- Community Feel: Warm, approachable design reflecting university culture
+- Professional Trust: Clean, minimal interfaces that inspire confidence
+- Information Clarity: Excellent hierarchy and scannable content
+- Connection-Focused: Facilitating meaningful professional relationships
+- University Context: Professional yet accessible for students
 
 ## Core Design Elements
 
-### A. Color Palette
-
-**Light Mode:**
-- Primary: 220 85% 35% (University of Rochester Royal Blue)
-- Primary Hover: 220 85% 30%
-- Accent: 40 95% 55% (Rochester Gold, use sparingly for CTAs and highlights)
-- Background: 0 0% 98%
-- Surface: 0 0% 100%
-- Border: 220 15% 90%
-- Text Primary: 220 20% 15%
-- Text Secondary: 220 10% 45%
-- Success: 150 75% 40%
-- Warning: 40 90% 50%
-
-**Dark Mode:**
-- Primary: 220 85% 55%
-- Primary Hover: 220 85% 60%
-- Accent: 40 95% 60%
-- Background: 220 15% 10%
-- Surface: 220 12% 14%
-- Border: 220 10% 25%
-- Text Primary: 220 5% 95%
-- Text Secondary: 220 5% 70%
-- Success: 150 60% 50%
-- Warning: 40 85% 55%
-
-### B. Typography
+### A. Typography
 
 **Font Families:**
-- Headings: 'Inter', sans-serif (weights: 600, 700, 800)
-- Body: 'Inter', sans-serif (weights: 400, 500, 600)
-- Monospace (for tags/code): 'JetBrains Mono', monospace
+- All Text: 'Inter', sans-serif (weights: 400, 500, 600, 700)
 
 **Type Scale:**
-- Hero Heading: text-5xl md:text-6xl font-bold
+- Hero Heading: text-5xl md:text-6xl lg:text-7xl font-bold leading-tight
 - Page Title: text-4xl font-bold
-- Section Heading: text-3xl font-semibold
-- Card Title: text-xl font-semibold
-- Body Large: text-lg font-medium
-- Body: text-base
-- Small: text-sm
-- Tiny: text-xs
+- Section Heading: text-2xl font-semibold
+- Card Title: text-lg font-semibold
+- Subheading: text-base font-medium
+- Body: text-base (15px equivalent)
+- Secondary: text-sm
+- Caption: text-xs
 
-### C. Layout System
+**Line Height:**
+- Headings: leading-tight (1.2)
+- Body: leading-relaxed (1.6)
 
-**Spacing Primitives:** Use Tailwind units of 2, 4, 6, 8, 12, 16, 20, 24
+### B. Layout System
+
+**Spacing Primitives:** Tailwind units of 2, 4, 6, 8, 12, 16, 20, 24, 32
 
 **Container Strategy:**
-- Max-width: max-w-7xl for main content areas
-- Padding: px-4 md:px-6 lg:px-8
-- Section spacing: py-12 md:py-16 lg:py-20
-- Card spacing: p-6 md:p-8
-- Compact cards: p-4
+- Main content: max-w-7xl mx-auto
+- Narrow content: max-w-4xl mx-auto
+- Full-width sections: w-full with inner constraints
+- Standard padding: px-6 md:px-8 lg:px-12
+- Section spacing: py-16 md:py-20 lg:py-24
+- Component spacing: space-y-8 md:space-y-12
 
 **Grid Patterns:**
-- Team/Project cards: grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6
-- Startup showcase: grid-cols-1 md:grid-cols-2 gap-8
-- Profile sections: Two-column layout on desktop (sidebar + main content)
+- Three-column cards: grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6
+- Two-column split: grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12
+- Feed layout: Single column max-w-2xl with sidebar
 
-### D. Component Library
+### C. Component Library
 
 **Navigation Bar:**
-- Fixed top navigation with logo, menu items, search, and profile dropdown
-- Height: h-16
-- Background: Surface color with border-b
-- Sticky positioning with backdrop-blur effect
+- Fixed top, h-16, backdrop-blur-sm with subtle border-b
+- Logo left, main nav center, profile/notifications right
+- Search bar integrated (expandable on mobile)
+- Clean dropdown menus with dividers
+- Active state: subtle bottom border on nav items
 
-**User Cards (Team Matching):**
-- White surface with subtle shadow (shadow-sm hover:shadow-md)
-- Avatar: Circular, 64×64px
+**Profile Cards (Team Matching):**
+- Clean white background with subtle border (border-gray-200)
+- Professional circular avatar: 80×80px (card), 120×120px (profile header)
 - Name: text-lg font-semibold
-- Role/Year: text-sm text-secondary
-- Skills: Flex-wrapped pill badges with primary-100 background
-- Action buttons: "View Profile" and "Connect" CTAs
-- Border radius: rounded-xl
+- Title/Year/Major: text-sm text-gray-600
+- Bio snippet: 2 lines, text-sm
+- Skills: Subtle pill badges with gray backgrounds
+- Connection status indicator
+- "Connect" primary button + "Message" secondary
+- Hover: subtle shadow elevation
+- Border radius: rounded-lg
 
-**Project Gig Cards:**
-- Featured image or gradient background header
-- Company/Startup logo in corner
+**Opportunity Cards (Startups/Projects):**
+- Company logo badge: 48×48px, top-left
 - Title: text-xl font-semibold
-- Short description: 2-3 lines with text-secondary
-- Tags: Skill requirements as colored pills
-- Footer: Time commitment, deadline, "Apply" CTA
-- Border radius: rounded-xl
+- Company name: text-sm font-medium text-gray-700
+- Description: 3-4 lines, text-sm text-gray-600
+- Metadata row: location, type, posted date with icons
+- Skill tags: rounded-full badges
+- "View Details" button, full-width at bottom
+- Border radius: rounded-lg
+- Border: subtle border-gray-200
 
-**Startup Showcase Cards:**
-- Large featured image (16:9 aspect ratio)
-- Overlay gradient for text readability
-- Logo placement: Top-left corner, rounded
-- Tagline: text-lg on image overlay
-- Team size indicator
-- "Learn More" CTA as outline button with blurred background
-- Border radius: rounded-2xl
+**Feed Posts/Updates:**
+- Card-based with author info header (avatar + name + timestamp)
+- Content area with proper spacing
+- Action bar: Like, Comment, Share icons
+- Engagement counts
+- Comment section expandable
+- Border radius: rounded-lg
 
 **Messaging Interface:**
-- Split layout: Conversation list (w-80) + Active chat
-- Message bubbles: Sent (primary color), Received (surface-secondary)
-- Timestamp: text-xs text-secondary
-- Input: Sticky bottom with rounded-full input field
-- Border radius: rounded-2xl for bubbles
+- Three-column: Conversations list (320px) | Active chat | Contact info sidebar (280px, collapsible)
+- Message bubbles: sent (primary-50 background), received (gray-100)
+- Timestamps: text-xs text-gray-500 outside bubbles
+- Input: bottom-fixed with rounded-full field and send button
+- Professional avatar in each message
+- Border radius: rounded-2xl for bubbles, rounded-lg for containers
+
+**Search & Filters:**
+- Prominent search bar: rounded-full with icon prefix
+- Filter chips: rounded-full, dismissible with X
+- Advanced filters: dropdown panels with checkboxes and range sliders
+- Applied filters visible above results
+- Filter sidebar on desktop, drawer on mobile
 
 **Forms & Inputs:**
-- Input fields: rounded-lg with border, focus:ring-2 focus:ring-primary
-- Labels: text-sm font-medium mb-2
-- Dropdowns: Custom styled with chevron icon
-- File upload: Drag-and-drop zone with dashed border
-- Consistent dark mode support with proper contrast
+- Input fields: rounded-md, border-gray-300, focus:ring-2 focus:ring-blue-500
+- Labels: text-sm font-medium text-gray-700 mb-2
+- Helper text: text-xs text-gray-500
+- Error states: red border and text
+- Multi-select dropdowns with pills
+- Rich text editor for descriptions
+- Image upload with preview thumbnails
 
 **Buttons:**
-- Primary: bg-primary text-white rounded-lg px-6 py-2.5 font-medium
-- Secondary: bg-surface border-2 border-primary text-primary rounded-lg
-- Outline (on images): backdrop-blur-md bg-white/20 border border-white/40
-- Icon buttons: p-2 rounded-lg hover:bg-surface-hover
-- Sizes: text-sm (default), text-base (large)
+- Primary: bg-[deep-navy] text-white rounded-md px-6 py-2.5 font-medium shadow-sm
+- Secondary: bg-white border border-gray-300 text-gray-700 rounded-md
+- Text button: text-blue-600 hover:underline
+- Icon buttons: p-2 rounded-md hover:bg-gray-100
+- Button groups: segmented control style
+- On images: backdrop-blur-md bg-white/90 border-0 shadow-lg
 
-**Badges & Tags:**
-- Skill tags: rounded-full px-3 py-1 text-xs font-medium
-- Status badges: rounded-md px-2 py-1 text-xs font-semibold
-- Color variants: primary-subtle, success-subtle, warning-subtle
+**Navigation Tabs:**
+- Underline style (LinkedIn pattern)
+- Active: border-b-2 border-blue-600 text-blue-600
+- Inactive: text-gray-600 hover:text-gray-900
+- Spacing: px-4 py-3
 
-### E. Images
+**Badges & Status:**
+- Skill badges: rounded-full px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700
+- Status indicators: small circular dots with colors
+- Connection degree: "1st", "2nd", "3rd" in small gray badges
+- Premium features: gold accent badges
+
+**Modals & Overlays:**
+- Centered overlay with backdrop blur
+- Clean header with title and close button
+- Content area with proper padding (p-6)
+- Footer with action buttons
+- Border radius: rounded-xl
+- Max-width: max-w-2xl
+
+### D. Images
 
 **Hero Section (Homepage):**
-Large, vibrant hero image showing diverse students collaborating in a modern University of Rochester setting (library, innovation space, or campus landmark). Image should be 1920×800px, with gradient overlay (bottom-to-top, dark to transparent) for text readability. Place "Find Your Team. Build Your Future." headline and search bar over the hero.
+Professional hero image (1920×600px) featuring University of Rochester students collaborating in a modern setting - bright, natural lighting showing diversity and engagement. Overlay: dark gradient (bottom-up, opacity 0.7 to 0) for text readability. Hero contains: headline "Connect. Collaborate. Launch Your Career." + subheading + prominent search bar with blurred-background buttons.
 
-**Profile Photos:**
-- User avatars: Circular, 40×40px (small), 64×64px (medium), 128×128px (large)
-- Default avatar: Initials on colored background generated from name
+**Profile Covers:**
+Wide banner images (1200×300px) - optional professional backgrounds or University of Rochester campus imagery. Subtle overlay if text present.
 
-**Startup Showcase Images:**
-Product screenshots, team photos, or brand visuals at 800×450px. Use subtle shadow and border radius.
+**Company/Startup Logos:**
+Square logos (200×200px) displayed as circles or rounded squares (48×48px to 120×120px depending on context). Default: colored background with initials.
 
-**Project Gig Images:**
-Optional header images (600×300px) representing the project type or company brand.
+**Professional Avatars:**
+High-quality headshots, circular display:
+- Feed/Cards: 48×48px
+- Profile header: 160×160px
+- Messages: 40×40px
+- Default: Initials on solid color background
+
+**Opportunity Images:**
+Featured images for startup showcases (800×450px, 16:9 ratio). Product screenshots or team photos with subtle shadows.
+
+**Content Images:**
+In-feed images supporting posts/updates, flexible aspect ratios with max-height constraints.
 
 **Icon Library:**
-Use Heroicons (outline and solid variants) via CDN for all interface icons.
+Heroicons (outline style primarily) via CDN for all UI icons - consistent stroke width.
 
 ## Page-Specific Layouts
 
-**Homepage:** Hero with search → Featured Startups (3 cards) → Latest Projects (grid) → How It Works (3 steps) → CTA section
+**Homepage:**
+Hero with search → Value propositions (3-column grid) → Featured Opportunities (4 cards) → Success Stories (2-column) → How It Works (horizontal timeline) → CTA section with stats
 
-**Team Matching:** Filter sidebar (left, collapsible on mobile) + Grid of student cards with infinite scroll
+**Team Matching (Feed):**
+Left sidebar: Filters (collapsible on mobile, w-64)
+Main feed: Student profile cards in single column (max-w-2xl)
+Right sidebar: Suggested connections, upcoming events (w-80, hidden on tablet)
 
-**Startup Showcase:** Masonry grid layout with featured startups highlighted with larger cards
+**Opportunity Discovery:**
+Search bar with filter chips → Two-column grid of opportunity cards → Pagination
+Individual view: Full opportunity details with sidebar (company info, similar opportunities)
 
-**Messages:** Two-column split with conversation list and active chat pane
+**Profile Page:**
+Cover photo → Avatar + headline (centered) → About section → Experience timeline → Skills grid → Projects showcase → Recommendations
+Two-column on desktop: Main content (2/3) + Sidebar (1/3) with contact card, education, connections
 
-**Profile:** Cover photo banner → Avatar + Bio (left column, w-80) → Tabs for About/Projects/Startups (main column)
+**Messages:**
+Three-pane layout: Conversations | Active Chat | Contact Details
+Mobile: Single pane with navigation between views
+
+**Dashboard/Home Feed:**
+LinkedIn-style feed with posts, updates, recommended opportunities
+Infinite scroll with loading states
+
+## Accessibility & States
+
+**Focus States:**
+- Visible ring: ring-2 ring-blue-500 ring-offset-2
+- Skip to main content link
+- Keyboard navigation throughout
+
+**Hover States:**
+- Cards: subtle shadow elevation (shadow-md)
+- Links: underline or color shift
+- Buttons: slight darkening or brightness shift
+
+**Loading States:**
+- Skeleton screens matching content structure
+- Shimmer effect on placeholder cards
+- Progress indicators for async actions
+
+**Empty States:**
+- Centered with illustration/icon
+- Clear heading and supportive text
+- Primary action button
