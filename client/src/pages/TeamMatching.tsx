@@ -5,9 +5,11 @@ import { SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
 
 export default function TeamMatching() {
   const [showFilters, setShowFilters] = useState(false);
+  const { toast } = useToast();
 
   const { data: users = [], isLoading } = useQuery<User[]>({
     queryKey: ["/api/users"],
@@ -82,7 +84,14 @@ export default function TeamMatching() {
             )}
 
             <div className="mt-8 flex justify-center">
-              <Button variant="outline" data-testid="button-load-more">
+              <Button 
+                variant="outline" 
+                data-testid="button-load-more"
+                onClick={() => toast({
+                  title: "All students loaded",
+                  description: "You're viewing all available students.",
+                })}
+              >
                 Load More
               </Button>
             </div>

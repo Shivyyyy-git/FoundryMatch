@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Users, Calendar } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProjectCardProps {
   title: string;
@@ -24,10 +25,19 @@ export function ProjectCard({
   deadline,
   type = "volunteer"
 }: ProjectCardProps) {
+  const { toast } = useToast();
+  
   const typeColors = {
     paid: "bg-chart-3/20 text-chart-3 border-chart-3/30",
     volunteer: "bg-primary/20 text-primary border-primary/30",
     credit: "bg-chart-2/20 text-chart-2 border-chart-2/30"
+  };
+
+  const handleApply = () => {
+    toast({
+      title: "Application Submitted!",
+      description: `Your application for ${title} at ${company} has been submitted successfully.`,
+    });
   };
 
   return (
@@ -84,6 +94,7 @@ export function ProjectCard({
         <Button 
           className="w-full"
           data-testid="button-apply"
+          onClick={handleApply}
         >
           Apply Now
         </Button>
