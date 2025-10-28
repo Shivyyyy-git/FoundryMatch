@@ -3,66 +3,21 @@ import { FilterSidebar } from "@/components/FilterSidebar";
 import { Button } from "@/components/ui/button";
 import { SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
-import avatar1 from "@assets/generated_images/Student_profile_avatar_1_237efb63.png";
-import avatar2 from "@assets/generated_images/Student_profile_avatar_2_a3ed9adb.png";
-import avatar3 from "@assets/generated_images/Student_profile_avatar_3_bd597b3b.png";
+import { useQuery } from "@tanstack/react-query";
+import type { User } from "@shared/schema";
 
 export default function TeamMatching() {
   const [showFilters, setShowFilters] = useState(false);
 
-  const students = [
-    {
-      name: "Sarah Chen",
-      major: "Computer Science",
-      year: "Junior",
-      bio: "Passionate about AI/ML and building products that make a difference. Looking for a team to work on healthcare tech.",
-      skills: ["Python", "React", "Machine Learning", "UI/UX", "Data Science"],
-      avatar: avatar1,
-      availability: "Available for projects"
-    },
-    {
-      name: "Marcus Rodriguez",
-      major: "Electrical Engineering",
-      year: "Senior",
-      bio: "Hardware enthusiast with a knack for IoT projects. Experienced in embedded systems and mobile app development.",
-      skills: ["C++", "React Native", "IoT", "Embedded Systems", "Flutter"],
-      avatar: avatar2,
-      availability: "Open to join teams"
-    },
-    {
-      name: "Aisha Johnson",
-      major: "Business Administration",
-      year: "Sophomore",
-      bio: "Business strategy and marketing expert. Love helping startups grow and reach their target audience.",
-      skills: ["Marketing", "Strategy", "Analytics", "Fundraising", "Sales"],
-      avatar: avatar3,
-      availability: "Available for projects"
-    },
-    {
-      name: "David Kim",
-      major: "Computer Science",
-      year: "Junior",
-      bio: "Full-stack developer interested in building scalable web applications. Open to frontend, backend, or DevOps roles.",
-      skills: ["Node.js", "React", "PostgreSQL", "AWS", "Docker"],
-      availability: "Available for projects"
-    },
-    {
-      name: "Emily Patterson",
-      major: "Graphic Design",
-      year: "Senior",
-      bio: "UI/UX designer with a passion for creating beautiful, user-friendly interfaces. Experience in branding and visual identity.",
-      skills: ["Figma", "Adobe XD", "Illustrator", "Branding", "Prototyping"],
-      availability: "Open to join teams"
-    },
-    {
-      name: "James Thompson",
-      major: "Data Science",
-      year: "Sophomore",
-      bio: "Data wizard who loves turning complex datasets into actionable insights. Passionate about data visualization.",
-      skills: ["Python", "R", "Tableau", "SQL", "Machine Learning"],
-      availability: "Available for projects"
-    }
-  ];
+  const { data: users = [], isLoading } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+  });
+
+  const students = users.filter(u => u.major || u.bio || (u.skills && u.skills.length > 0));
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -105,11 +60,26 @@ export default function TeamMatching() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {students.map((student) => (
-                <StudentCard key={student.name} {...student} />
-              ))}
-            </div>
+            {students.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">No students found. Complete your profile to appear here!</p>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {students.map((student) => (
+                  <StudentCard 
+                    key={student.id} 
+                    name={`${student.firstName} ${student.lastName}`}
+                    major={student.major || "Not specified"}
+                    year={student.year || "Not specified"}
+                    bio={student.bio || "No bio yet"}
+                    skills={student.skills || []}
+                    avatar={student.profileImageUrl || undefined}
+                    availability={student.availability || "Available"}
+                  />
+                ))}
+              </div>
+            )}
 
             <div className="mt-8 flex justify-center">
               <Button variant="outline" data-testid="button-load-more">

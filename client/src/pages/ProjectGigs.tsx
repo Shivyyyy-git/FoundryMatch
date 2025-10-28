@@ -8,10 +8,94 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
 import { Search, Plus } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import type { Project, InsertProject } from "@shared/schema";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertProjectSchema } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ProjectGigs() {
-  const projects = [
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const { toast } = useToast();
+
+  const { data: projects = [], isLoading } = useQuery<Project[]>({
+    queryKey: ["/api/projects"],
+    queryFn: async () => {
+      const res = await fetch("/api/projects?approved=true", { credentials: "include" });
+      return res.json();
+    },
+  });
+
+  const createProjectMutation = useMutation({
+    mutationFn: async (data: InsertProject) => {
+      const res = await apiRequest("POST", "/api/projects", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
+      setIsDialogOpen(false);
+      toast({
+        title: "Project submitted!",
+        description: "Your project gig has been submitted for admin approval.",
+      });
+      form.reset();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create project. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const form = useForm<InsertProject>({
+    resolver: zodResolver(insertProjectSchema),
+    defaultValues: {
+      title: "",
+      company: "",
+      description: "",
+      skills: [],
+      timeCommitment: "",
+      teamSize: "",
+      deadline: "",
+      type: "volunteer",
+    },
+  });
+
+  const onSubmit = (data: InsertProject) => {
+    createProjectMutation.mutate(data);
+  };
+
+  const filteredProjects = projects.filter(project =>
+    searchQuery === "" ||
+    project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.company.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const mockProjects = [
     {
       title: "Mobile App Developer",
       company: "HealthTech Startup",
@@ -71,6 +155,10 @@ export default function ProjectGigs() {
     }
   ];
 
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="border-b bg-background">
@@ -84,10 +172,148 @@ export default function ProjectGigs() {
                 Discover exciting opportunities and gain real-world experience
               </p>
             </div>
-            <Button data-testid="button-post-gig">
-              <Plus className="h-4 w-4 mr-2" />
-              Post a Gig
-            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button data-testid="button-post-gig">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Post a Gig
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Post a Project Gig</DialogTitle>
+                  <DialogDescription>
+                    Share your project opportunity with the Rochester community
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Project Title</FormLabel>
+                          <FormControl>
+                            <Input {...field} data-testid="input-project-title" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="company"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Company/Organization</FormLabel>
+                          <FormControl>
+                            <Input {...field} data-testid="input-company" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} data-testid="textarea-description" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="skills"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Required Skills (comma-separated)</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              value={field.value?.join(", ") || ""}
+                              onChange={(e) => field.onChange(e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
+                              placeholder="React, TypeScript, Node.js"
+                              data-testid="input-skills"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Type</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-project-type-form">
+                                <SelectValue placeholder="Select project type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="paid">Paid</SelectItem>
+                              <SelectItem value="credit">For Credit</SelectItem>
+                              <SelectItem value="volunteer">Volunteer</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="timeCommitment"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Time Commitment (optional)</FormLabel>
+                          <FormControl>
+                            <Input {...field} value={field.value || ""} placeholder="10-15 hrs/week" data-testid="input-time-commitment" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="teamSize"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Team Size (optional)</FormLabel>
+                          <FormControl>
+                            <Input {...field} value={field.value || ""} placeholder="3-4 members" data-testid="input-team-size" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="deadline"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Application Deadline (optional)</FormLabel>
+                          <FormControl>
+                            <Input {...field} value={field.value || ""} placeholder="Apply by Feb 15" data-testid="input-deadline" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" disabled={createProjectMutation.isPending} data-testid="button-submit-project">
+                      {createProjectMutation.isPending ? "Submitting..." : "Submit Project"}
+                    </Button>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
@@ -96,6 +322,8 @@ export default function ProjectGigs() {
               <Input
                 placeholder="Search projects..."
                 className="pl-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 data-testid="input-search-projects"
               />
             </div>
@@ -129,15 +357,31 @@ export default function ProjectGigs() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <p className="text-sm text-muted-foreground">
-            {projects.length} opportunities available
+            {filteredProjects.length} opportunities available
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project, index) => (
-            <ProjectCard key={index} {...project} />
-          ))}
-        </div>
+        {filteredProjects.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No projects found. Be the first to post one!</p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProjects.map((project) => (
+              <ProjectCard 
+                key={project.id} 
+                title={project.title}
+                company={project.company}
+                description={project.description}
+                skills={project.skills}
+                type={project.type as "paid" | "credit" | "volunteer"}
+                timeCommitment={project.timeCommitment || ""}
+                teamSize={project.teamSize || ""}
+                deadline={project.deadline || undefined}
+              />
+            ))}
+          </div>
+        )}
 
         <div className="mt-8 flex justify-center">
           <Button variant="outline" data-testid="button-load-more">

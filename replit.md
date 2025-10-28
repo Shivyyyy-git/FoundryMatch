@@ -8,8 +8,26 @@ The application follows a full-stack architecture with React on the frontend, Ex
 
 ## Recent Changes (October 28, 2025)
 
-Added Replit Auth authentication system:
-- Implemented OpenID Connect (OIDC) authentication through Replit
+**Complete Database Backend Implementation:**
+- Built complete database schema with Projects, Startups, Messages, and extended Users tables
+- Implemented comprehensive storage layer with CRUD operations for all entities
+- Created secure API routes with role-based access control
+- Connected all frontend pages to real database: Project Gigs, Startup Showcase, Team Matching, Admin Panel
+
+**Admin Approval Workflow:**
+- Projects and startups require admin approval before appearing publicly
+- Admin panel for content moderation with approve/reject functionality
+- User management and analytics dashboard
+- Role-based access control with `isAdmin` flag on users table
+
+**Security Measures:**
+- Admin middleware protecting approval and deletion endpoints
+- Ownership checks on update operations (owner or admin only)
+- Field whitelisting to prevent privilege escalation (non-admins cannot modify approval status)
+- Regular users can create content but cannot approve/delete
+
+**Authentication System:**
+- OpenID Connect (OIDC) authentication through Replit
 - Users can sign in with Google (and other supported providers)
 - Session-based authentication with PostgreSQL session storage
 - Protected routes that redirect unauthenticated users to login
@@ -58,6 +76,8 @@ Preferred communication style: Simple, everyday language.
 - Session management with connect-pg-simple for PostgreSQL session storage
 - Passport.js for OAuth strategy implementation
 - Protected routes using `isAuthenticated` middleware
+- Admin authorization using `isAdmin` middleware for sensitive operations
+- Role-based access control with ownership checks on update operations
 
 **API Design**
 - RESTful API endpoints under `/api` prefix
@@ -85,15 +105,11 @@ Preferred communication style: Simple, everyday language.
 - Schema location: `shared/schema.ts` for code sharing between client and server
 
 **Current Data Models**
-- Users: Profile information from OIDC (email, name, profile image)
+- Users: Profile information from OIDC (email, name, profile image) + extended fields (major, year, bio, skills, availability, isAdmin)
 - Sessions: Express session storage for authentication state
-
-**Planned Data Models** (based on requirements)
-- Projects: Title, description, skills needed, compensation type, time commitment, approval status
-- Teams: Team name, members, active status
-- Messages: Sender, receiver, content, timestamp
-- Startups: Name, founder, category, description, approval status
-- Profiles: Skills, interests, availability
+- Projects: Title, company, description, skills needed, compensation type, time commitment, team size, approval status, user reference
+- Startups: Name, tagline, description, category, website, team size, approval status, user reference
+- Messages: Sender, receiver, content, timestamp, read status
 
 ### Key Architectural Decisions
 
@@ -109,9 +125,19 @@ Preferred communication style: Simple, everyday language.
 - Session-based state management with secure cookies
 
 **Admin Approval Workflow**
-- All user-generated content (teams, projects, showcases) requires admin approval
+- All user-generated content (projects, startups) requires admin approval
 - Approval state tracked in database with `is_approved` flags
-- Separate admin interface for content moderation
+- Admin interface for content moderation with approve/reject buttons
+- Admin analytics dashboard showing content statistics
+- Security enforced at API level with admin middleware
+
+**Authorization Matrix**
+- Create project/startup: Any authenticated user
+- Read approved content: Any authenticated user
+- Read all content (including pending): Admin only
+- Update own content: Owner or admin (non-admins cannot change approval status)
+- Delete content: Admin only
+- Approve/reject content: Admin only
 
 **File Organization**
 - Component co-location: UI components in `client/src/components/ui/`
