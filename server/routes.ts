@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertStudentProfileSchema, insertProjectSchema, insertStartupSchema, insertTeamSchema, insertTeamMemberSchema, insertMessageSchema } from "@shared/schema";
+import { insertStudentProfileSchema, insertProjectSchema, insertStartupSchema, insertTeamSchema, insertTeamMemberSchema, insertMessageSchema, insertProjectApplicationSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -149,6 +149,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting project:", error);
       res.status(500).json({ message: "Failed to delete project" });
+    }
+  });
+
+  // Project application routes
+  app.post('/api/projects/:id/apply', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const projectId = parseInt(req.params.id);
+      
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      if (project.userId === userId) {
+        return res.status(403).json({ message: "You cannot apply to your own project" });
+      }
+      
+      if (project.status !== "open") {
+        return res.status(409).json({ message: "This project is no longer accepting applications" });
+      }
+      
+      const hasApplied = await storage.hasUserApplied(projectId, userId);
+      if (hasApplied) {
+        return res.status(409).json({ message: "You have already applied to this project" });
+      }
+      
+      const validated = insertProjectApplicationSchema.parse({ ...req.body, projectId, userId });
+      const application = await storage.createProjectApplication(validated);
+      res.json(application);
+    } catch (error) {
+      console.error("Error creating application:", error);
+      res.status(400).json({ message: "Failed to submit application" });
+    }
+  });
+
+  app.get('/api/projects/:id/applications', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const projectId = parseInt(req.params.id);
+      const project = await storage.getProject(projectId);
+      
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+      
+      if (project.userId !== userId) {
+        return res.status(403).json({ message: "Unauthorized to view applications" });
+      }
+      
+      const applications = await storage.getProjectApplications(projectId);
+      res.json(applications);
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+      res.status(500).json({ message: "Failed to fetch applications" });
+    }
+  });
+
+  app.get('/api/applications/my', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const applications = await storage.getUserApplications(userId);
+      res.json(applications);
+    } catch (error) {
+      console.error("Error fetching user applications:", error);
+      res.status(500).json({ message: "Failed to fetch applications" });
     }
   });
 

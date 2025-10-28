@@ -2,6 +2,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Users, Calendar } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 interface ProjectCardProps {
   id: number;
@@ -28,10 +31,33 @@ export function ProjectCard({
   type = "volunteer",
   status = "open"
 }: ProjectCardProps) {
+  const { toast } = useToast();
+  
   const typeColors = {
     paid: "bg-chart-3/20 text-chart-3 border-chart-3/30",
     volunteer: "bg-primary/20 text-primary border-primary/30",
     credit: "bg-chart-2/20 text-chart-2 border-chart-2/30"
+  };
+
+  const applyMutation = useMutation({
+    mutationFn: () => apiRequest("POST", `/api/projects/${id}/apply`, { message: "" }),
+    onSuccess: () => {
+      toast({
+        title: "Application Submitted",
+        description: "Your application has been sent to the project owner. They will contact you soon!",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to submit application",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleApply = () => {
+    applyMutation.mutate();
   };
 
   return (
@@ -87,9 +113,11 @@ export function ProjectCard({
         
         <Button 
           className="w-full"
+          onClick={handleApply}
+          disabled={status !== "open" || applyMutation.isPending}
           data-testid="button-apply"
         >
-          Apply Now
+          {applyMutation.isPending ? "Applying..." : status === "open" ? "Apply Now" : "Closed"}
         </Button>
       </div>
     </Card>

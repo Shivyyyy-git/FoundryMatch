@@ -6,6 +6,7 @@ import {
   teams,
   teamMembers,
   messages,
+  projectApplications,
   type User,
   type UpsertUser,
   type StudentProfile,
@@ -20,6 +21,8 @@ import {
   type InsertTeamMember,
   type Message,
   type InsertMessage,
+  type ProjectApplication,
+  type InsertProjectApplication,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or } from "drizzle-orm";
@@ -68,6 +71,12 @@ export interface IStorage {
   getConversation(userId1: string, userId2: string): Promise<Message[]>;
   sendMessage(message: InsertMessage): Promise<Message>;
   markMessageRead(id: number): Promise<void>;
+  
+  // Project application operations
+  getProjectApplications(projectId: number): Promise<ProjectApplication[]>;
+  getUserApplications(userId: string): Promise<ProjectApplication[]>;
+  createProjectApplication(application: InsertProjectApplication): Promise<ProjectApplication>;
+  hasUserApplied(projectId: number, userId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -301,6 +310,36 @@ export class DatabaseStorage implements IStorage {
 
   async markMessageRead(id: number): Promise<void> {
     await db.update(messages).set({ read: true }).where(eq(messages.id, id));
+  }
+
+  // Project application operations
+  async getProjectApplications(projectId: number): Promise<ProjectApplication[]> {
+    return await db
+      .select()
+      .from(projectApplications)
+      .where(eq(projectApplications.projectId, projectId))
+      .orderBy(desc(projectApplications.createdAt));
+  }
+
+  async getUserApplications(userId: string): Promise<ProjectApplication[]> {
+    return await db
+      .select()
+      .from(projectApplications)
+      .where(eq(projectApplications.userId, userId))
+      .orderBy(desc(projectApplications.createdAt));
+  }
+
+  async createProjectApplication(applicationData: InsertProjectApplication): Promise<ProjectApplication> {
+    const [application] = await db.insert(projectApplications).values(applicationData as any).returning();
+    return application;
+  }
+
+  async hasUserApplied(projectId: number, userId: string): Promise<boolean> {
+    const [application] = await db
+      .select()
+      .from(projectApplications)
+      .where(and(eq(projectApplications.projectId, projectId), eq(projectApplications.userId, userId)));
+    return !!application;
   }
 }
 

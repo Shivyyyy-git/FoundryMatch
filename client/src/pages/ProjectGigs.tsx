@@ -1,5 +1,5 @@
 import { ProjectCard } from "@/components/ProjectCard";
-import { Button } from "@/components/ui/button";
+import { PostProjectDialog } from "@/components/PostProjectDialog";
 import { Input } from "@/components/ui/input";
 import { 
   Select,
@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Plus } from "lucide-react";
+import { Search } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Project } from "@shared/schema";
@@ -61,10 +61,7 @@ export default function ProjectGigs() {
                 Discover exciting opportunities and gain real-world experience
               </p>
             </div>
-            <Button data-testid="button-post-gig">
-              <Plus className="h-4 w-4 mr-2" />
-              Post a Gig
-            </Button>
+            <PostProjectDialog />
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">

@@ -7,6 +7,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   varchar,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
@@ -181,3 +182,24 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
 
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
+
+// Project Applications
+export const projectApplications = pgTable("project_applications", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  projectId: integer("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  message: text("message"),
+  status: varchar("status").default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  uniqueApplication: unique().on(table.projectId, table.userId),
+}));
+
+export const insertProjectApplicationSchema = createInsertSchema(projectApplications).omit({
+  id: true,
+  status: true,
+  createdAt: true,
+});
+
+export type InsertProjectApplication = z.infer<typeof insertProjectApplicationSchema>;
+export type ProjectApplication = typeof projectApplications.$inferSelect;
