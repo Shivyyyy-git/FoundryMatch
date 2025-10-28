@@ -1,6 +1,7 @@
 import { StartupCard } from "@/components/StartupCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SearchBar } from "@/components/SearchBar";
 import { 
   Select,
   SelectContent,
@@ -25,7 +26,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Startup, InsertStartup } from "@shared/schema";
@@ -53,10 +54,18 @@ export default function StartupShowcase() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery<PaginatedResponse>({
-    queryKey: ["/api/startups", "approved"],
+    queryKey: ["/api/startups", "approved", searchQuery],
     queryFn: async ({ pageParam = 0 }) => {
+      const params = new URLSearchParams({
+        approved: "true",
+        limit: "20",
+        offset: String(pageParam),
+      });
+      if (searchQuery) {
+        params.set("q", searchQuery);
+      }
       const res = await fetch(
-        `/api/startups?approved=true&limit=20&offset=${pageParam}`,
+        `/api/startups?${params.toString()}`,
         { credentials: "include" }
       );
       return res.json();
@@ -255,14 +264,11 @@ export default function StartupShowcase() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search startups..."
-                className="pl-9"
+            <div className="flex-1">
+              <SearchBar 
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                data-testid="input-search-startups"
+                onChange={setSearchQuery}
+                placeholder="Search startups by name, description, or category..."
               />
             </div>
             <Select>
@@ -295,17 +301,17 @@ export default function StartupShowcase() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <p className="text-sm text-muted-foreground">
-            {filteredStartups.length} startups in the showcase
+            {startups.length} startups in the showcase
           </p>
         </div>
 
-        {filteredStartups.length === 0 ? (
+        {startups.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No startups yet. Be the first to showcase yours!</p>
+            <p className="text-muted-foreground">No startups found{searchQuery ? " for your search" : ". Be the first to showcase yours!"}!</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredStartups.map((startup) => (
+            {startups.map((startup) => (
               <StartupCard 
                 key={startup.id} 
                 name={startup.name}

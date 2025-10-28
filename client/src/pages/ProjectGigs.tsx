@@ -1,6 +1,7 @@
 import { ProjectCard } from "@/components/ProjectCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SearchBar } from "@/components/SearchBar";
 import { 
   Select,
   SelectContent,
@@ -25,7 +26,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { Project, InsertProject } from "@shared/schema";
@@ -53,10 +54,18 @@ export default function ProjectGigs() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery<PaginatedResponse>({
-    queryKey: ["/api/projects", "approved"],
+    queryKey: ["/api/projects", "approved", searchQuery],
     queryFn: async ({ pageParam = 0 }) => {
+      const params = new URLSearchParams({
+        approved: "true",
+        limit: "20",
+        offset: String(pageParam),
+      });
+      if (searchQuery) {
+        params.set("q", searchQuery);
+      }
       const res = await fetch(
-        `/api/projects?approved=true&limit=20&offset=${pageParam}`,
+        `/api/projects?${params.toString()}`,
         { credentials: "include" }
       );
       return res.json();
@@ -339,14 +348,11 @@ export default function ProjectGigs() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search projects..."
-                className="pl-9"
+            <div className="flex-1">
+              <SearchBar 
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                data-testid="input-search-projects"
+                onChange={setSearchQuery}
+                placeholder="Search projects by title, company, or description..."
               />
             </div>
             <Select>
@@ -379,17 +385,17 @@ export default function ProjectGigs() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <p className="text-sm text-muted-foreground">
-            {filteredProjects.length} opportunities available
+            {projects.length} opportunities available
           </p>
         </div>
 
-        {filteredProjects.length === 0 ? (
+        {projects.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No projects found. Be the first to post one!</p>
+            <p className="text-muted-foreground">No projects found{searchQuery ? " for your search" : ". Be the first to post one!"}!</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map((project) => (
+            {projects.map((project) => (
               <ProjectCard 
                 key={project.id} 
                 title={project.title}

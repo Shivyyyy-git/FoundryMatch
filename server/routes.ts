@@ -65,10 +65,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
+      const query = req.query.q as string | undefined;
       const approvedOnly = req.query.approved === 'true' || !user?.isAdmin;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
       const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
-      const result = await storage.getAllProjects(approvedOnly, limit, offset);
+      const result = await storage.searchProjects(query, approvedOnly, limit, offset);
       res.json(result);
     } catch (error) {
       console.error("Error fetching projects:", error);
@@ -154,10 +155,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
+      const query = req.query.q as string | undefined;
       const approvedOnly = req.query.approved === 'true' || !user?.isAdmin;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
       const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
-      const result = await storage.getAllStartups(approvedOnly, limit, offset);
+      const result = await storage.searchStartups(query, approvedOnly, limit, offset);
       res.json(result);
     } catch (error) {
       console.error("Error fetching startups:", error);

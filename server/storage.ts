@@ -33,6 +33,7 @@ export interface IStorage {
   createProject(project: InsertProject, userId: string): Promise<Project>;
   getProject(id: string): Promise<Project | undefined>;
   getAllProjects(approvedOnly?: boolean, limit?: number, offset?: number): Promise<PaginatedResult<Project>>;
+  searchProjects(query?: string, approvedOnly?: boolean, limit?: number, offset?: number): Promise<PaginatedResult<Project>>;
   getUserProjects(userId: string): Promise<Project[]>;
   updateProject(id: string, data: Partial<Project>): Promise<Project>;
   deleteProject(id: string): Promise<void>;
@@ -42,6 +43,7 @@ export interface IStorage {
   createStartup(startup: InsertStartup, userId: string): Promise<Startup>;
   getStartup(id: string): Promise<Startup | undefined>;
   getAllStartups(approvedOnly?: boolean, limit?: number, offset?: number): Promise<PaginatedResult<Startup>>;
+  searchStartups(query?: string, approvedOnly?: boolean, limit?: number, offset?: number): Promise<PaginatedResult<Startup>>;
   getUserStartups(userId: string): Promise<Startup[]>;
   updateStartup(id: string, data: Partial<Startup>): Promise<Startup>;
   deleteStartup(id: string): Promise<void>;
@@ -191,6 +193,62 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async searchProjects(query?: string, approvedOnly = false, limit = 20, offset = 0): Promise<PaginatedResult<Project>> {
+    if (!query) {
+      return this.getAllProjects(approvedOnly, limit, offset);
+    }
+    
+    const searchCondition = or(
+      ilike(projects.title, `%${query}%`),
+      ilike(projects.description, `%${query}%`),
+      ilike(projects.company, `%${query}%`)
+    );
+    
+    if (approvedOnly) {
+      const whereClause = and(eq(projects.isApproved, true), searchCondition);
+      
+      const [totalResult] = await db
+        .select({ count: count() })
+        .from(projects)
+        .where(whereClause);
+      const total = Number(totalResult.count);
+      
+      const data = await db
+        .select()
+        .from(projects)
+        .where(whereClause)
+        .orderBy(desc(projects.createdAt))
+        .limit(limit)
+        .offset(offset);
+      
+      return {
+        data,
+        total,
+        hasMore: offset + data.length < total,
+      };
+    } else {
+      const [totalResult] = await db
+        .select({ count: count() })
+        .from(projects)
+        .where(searchCondition);
+      const total = Number(totalResult.count);
+      
+      const data = await db
+        .select()
+        .from(projects)
+        .where(searchCondition)
+        .orderBy(desc(projects.createdAt))
+        .limit(limit)
+        .offset(offset);
+      
+      return {
+        data,
+        total,
+        hasMore: offset + data.length < total,
+      };
+    }
+  }
+
   async getUserProjects(userId: string): Promise<Project[]> {
     return db
       .select()
@@ -265,6 +323,63 @@ export class DatabaseStorage implements IStorage {
       const data = await db
         .select()
         .from(startups)
+        .orderBy(desc(startups.createdAt))
+        .limit(limit)
+        .offset(offset);
+      
+      return {
+        data,
+        total,
+        hasMore: offset + data.length < total,
+      };
+    }
+  }
+
+  async searchStartups(query?: string, approvedOnly = false, limit = 20, offset = 0): Promise<PaginatedResult<Startup>> {
+    if (!query) {
+      return this.getAllStartups(approvedOnly, limit, offset);
+    }
+    
+    const searchCondition = or(
+      ilike(startups.name, `%${query}%`),
+      ilike(startups.description, `%${query}%`),
+      ilike(startups.tagline, `%${query}%`),
+      ilike(startups.category, `%${query}%`)
+    );
+    
+    if (approvedOnly) {
+      const whereClause = and(eq(startups.isApproved, true), searchCondition);
+      
+      const [totalResult] = await db
+        .select({ count: count() })
+        .from(startups)
+        .where(whereClause);
+      const total = Number(totalResult.count);
+      
+      const data = await db
+        .select()
+        .from(startups)
+        .where(whereClause)
+        .orderBy(desc(startups.createdAt))
+        .limit(limit)
+        .offset(offset);
+      
+      return {
+        data,
+        total,
+        hasMore: offset + data.length < total,
+      };
+    } else {
+      const [totalResult] = await db
+        .select({ count: count() })
+        .from(startups)
+        .where(searchCondition);
+      const total = Number(totalResult.count);
+      
+      const data = await db
+        .select()
+        .from(startups)
+        .where(searchCondition)
         .orderBy(desc(startups.createdAt))
         .limit(limit)
         .offset(offset);

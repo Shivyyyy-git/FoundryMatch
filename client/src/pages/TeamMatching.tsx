@@ -1,5 +1,6 @@
 import { StudentCard } from "@/components/StudentCard";
 import { FilterSidebar } from "@/components/FilterSidebar";
+import { SearchBar } from "@/components/SearchBar";
 import { Button } from "@/components/ui/button";
 import { SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
@@ -15,6 +16,7 @@ interface PaginatedResponse {
 
 export default function TeamMatching() {
   const [showFilters, setShowFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
   const {
@@ -24,10 +26,17 @@ export default function TeamMatching() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery<PaginatedResponse>({
-    queryKey: ["/api/users"],
+    queryKey: ["/api/users", searchQuery],
     queryFn: async ({ pageParam = 0 }) => {
+      const params = new URLSearchParams({
+        limit: "20",
+        offset: String(pageParam),
+      });
+      if (searchQuery) {
+        params.set("q", searchQuery);
+      }
       const res = await fetch(
-        `/api/users?limit=20&offset=${pageParam}`,
+        `/api/users?${params.toString()}`,
         { credentials: "include" }
       );
       return res.json();
@@ -82,6 +91,14 @@ export default function TeamMatching() {
 
           <main className="flex-1 min-w-0">
             <div className="mb-6">
+              <SearchBar 
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search students by name, major, or skills..."
+              />
+            </div>
+            
+            <div className="mb-6">
               <p className="text-sm text-muted-foreground">
                 Showing {students.length} students
               </p>
@@ -89,7 +106,7 @@ export default function TeamMatching() {
 
             {students.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">No students found. Complete your profile to appear here!</p>
+                <p className="text-muted-foreground">No students found{searchQuery ? " for your search" : ". Complete your profile to appear here"}!</p>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
