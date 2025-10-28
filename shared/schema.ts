@@ -115,8 +115,13 @@ export const startups = pgTable("startups", {
 
 export const insertStartupSchema = createInsertSchema(startups, {
   seeking: z.array(z.string()).default([]),
+  teamSize: z.number().optional(),
+  founded: z.string().optional(),
+  imageUrl: z.string().optional(),
+  websiteUrl: z.string().optional(),
 }).omit({
   id: true,
+  userId: true,
   createdAt: true,
   updatedAt: true,
   upvotes: true,
