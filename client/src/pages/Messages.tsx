@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Send, Search, MoreVertical } from "lucide-react";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 import avatar1 from "@assets/generated_images/Student_profile_avatar_1_237efb63.png";
 import avatar2 from "@assets/generated_images/Student_profile_avatar_2_a3ed9adb.png";
 import avatar3 from "@assets/generated_images/Student_profile_avatar_3_bd597b3b.png";
@@ -12,6 +13,7 @@ import avatar3 from "@assets/generated_images/Student_profile_avatar_3_bd597b3b.
 export default function Messages() {
   const [selectedChat, setSelectedChat] = useState(0);
   const [messageInput, setMessageInput] = useState("");
+  const { toast } = useToast();
 
   const conversations = [
     {
@@ -95,6 +97,10 @@ export default function Messages() {
   const handleSendMessage = () => {
     if (messageInput.trim()) {
       console.log("Sending message:", messageInput);
+      toast({
+        title: "Message Sent!",
+        description: `Your message to ${conversations[selectedChat].name} has been sent.`,
+      });
       setMessageInput("");
     }
   };
