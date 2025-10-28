@@ -100,20 +100,12 @@ export class DatabaseStorage implements IStorage {
 
     if (existingByEmail) {
       // Email exists with different OIDC sub - this is a conflict scenario
-      // Cannot safely merge accounts without breaking session/FK references
-      // For MVP: Use simple onConflictDoUpdate on the id field
-      const [upserted] = await db
-        .insert(users)
-        .values(userData)
-        .onConflictDoUpdate({
-          target: users.id,
-          set: {
-            ...userData,
-            updatedAt: new Date(),
-          },
-        })
-        .returning();
-      return upserted;
+      // Cannot safely merge accounts due to FK constraints and session/id mismatch
+      // For MVP: Reject the conflicting login with clear error message
+      throw new Error(
+        `Email ${userData.email} is already registered with a different account. ` +
+        `Please contact support at support@matchupfoundry.com for assistance.`
+      );
     }
 
     // No existing user found - insert new record

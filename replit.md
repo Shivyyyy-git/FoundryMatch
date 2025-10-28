@@ -94,6 +94,13 @@ The application follows a full-stack architecture with React on the frontend, Ex
 - Protected routes that redirect unauthenticated users to login
 - User profile management with data from OIDC claims (email, name, profile image)
 
+**Authentication Upsert Logic (Final Implementation):**
+- **Scenario 1 - Returning User (Same OIDC Sub):** Lookup by sub (users.id), update profile including email if changed
+- **Scenario 2 - Email Conflict (Different Sub, Same Email):** Reject login with clear error directing to support@matchupfoundry.com (MVP solution prevents FK violations and session/id mismatches)
+- **Scenario 3 - New User (New Sub, New Email):** Insert new user record
+- **Security:** Email unique constraint enforced, required field validation, no primary key updates (avoids FK violations)
+- **Design Decision:** For MVP at 3k user scale, email conflicts are rejected rather than implementing complex account merging (OIDC subs are stable in practice)
+
 ## User Preferences
 
 - Preferred communication style: Simple, everyday language
