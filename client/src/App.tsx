@@ -29,29 +29,29 @@ function Router() {
     );
   }
 
+  if (!isAuthenticated) {
+    return (
+      <Switch>
+        <Route path="/" component={Landing} />
+        <Route path="/:rest*">
+          {() => {
+            window.location.href = "/api/login";
+            return null;
+          }}
+        </Route>
+      </Switch>
+    );
+  }
+
   return (
     <Switch>
-      {!isAuthenticated ? (
-        <>
-          <Route path="/" component={Landing} />
-          <Route path="/:rest*">
-            {() => {
-              window.location.href = "/api/login";
-              return null;
-            }}
-          </Route>
-        </>
-      ) : (
-        <>
-          <Route path="/" component={Home} />
-          <Route path="/team-matching" component={TeamMatching} />
-          <Route path="/project-gigs" component={ProjectGigs} />
-          <Route path="/startup-showcase" component={StartupShowcase} />
-          <Route path="/messages" component={Messages} />
-          <Route path="/admin" component={Admin} />
-          <Route component={NotFound} />
-        </>
-      )}
+      <Route path="/" component={Home} />
+      <Route path="/team-matching" component={TeamMatching} />
+      <Route path="/project-gigs" component={ProjectGigs} />
+      <Route path="/startup-showcase" component={StartupShowcase} />
+      <Route path="/messages" component={Messages} />
+      <Route path="/admin" component={Admin} />
+      <Route path="/:rest*" component={NotFound} />
     </Switch>
   );
 }
