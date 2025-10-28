@@ -34,6 +34,7 @@ export interface IStorage {
   createStudentProfile(profile: InsertStudentProfile): Promise<StudentProfile>;
   updateStudentProfile(userId: string, profile: Partial<InsertStudentProfile>): Promise<StudentProfile>;
   getStudentProfiles(): Promise<StudentProfile[]>;
+  getStudentsWithProfiles(): Promise<any[]>;
   
   // Project operations
   getProjects(): Promise<Project[]>;
@@ -113,6 +114,53 @@ export class DatabaseStorage implements IStorage {
 
   async getStudentProfiles(): Promise<StudentProfile[]> {
     return await db.select().from(studentProfiles).orderBy(desc(studentProfiles.createdAt));
+  }
+
+  async getStudentsWithProfiles(): Promise<any[]> {
+    const profiles = await db
+      .select({
+        id: studentProfiles.id,
+        userId: studentProfiles.userId,
+        major: studentProfiles.major,
+        year: studentProfiles.year,
+        skills: studentProfiles.skills,
+        interests: studentProfiles.interests,
+        bio: studentProfiles.bio,
+        lookingForTeam: studentProfiles.lookingForTeam,
+        portfolioUrl: studentProfiles.portfolioUrl,
+        githubUrl: studentProfiles.githubUrl,
+        linkedinUrl: studentProfiles.linkedinUrl,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        email: users.email,
+        profileImageUrl: users.profileImageUrl,
+      })
+      .from(studentProfiles)
+      .leftJoin(users, eq(studentProfiles.userId, users.id))
+      .orderBy(desc(studentProfiles.createdAt));
+    
+    return profiles.map(p => {
+      const name = `${p.firstName || ''} ${p.lastName || ''}`.trim() || p.email || 'Unknown';
+      const availability = p.lookingForTeam === true ? 'Available for projects' : 'Not available';
+      
+      return {
+        id: p.id,
+        userId: p.userId,
+        name,
+        email: p.email,
+        major: p.major,
+        year: p.year,
+        skills: p.skills,
+        interests: p.interests,
+        bio: p.bio,
+        lookingForTeam: p.lookingForTeam,
+        portfolioUrl: p.portfolioUrl,
+        githubUrl: p.githubUrl,
+        linkedinUrl: p.linkedinUrl,
+        avatarUrl: p.profileImageUrl,
+        availability,
+      };
+    });
   }
 
   // Project operations

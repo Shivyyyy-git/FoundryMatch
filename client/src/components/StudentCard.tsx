@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserPlus } from "lucide-react";
 
 interface StudentCardProps {
+  id: number;
   name: string;
   major: string;
   year: string;
@@ -15,6 +16,7 @@ interface StudentCardProps {
 }
 
 export function StudentCard({ 
+  id,
   name, 
   major, 
   year, 

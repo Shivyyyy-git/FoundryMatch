@@ -21,6 +21,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Student Profile routes
+  app.get('/api/students', isAuthenticated, async (_req, res) => {
+    try {
+      const students = await storage.getStudentsWithProfiles();
+      res.json(students);
+    } catch (error) {
+      console.error("Error fetching students:", error);
+      res.status(500).json({ message: "Failed to fetch students" });
+    }
+  });
+
   app.get('/api/profiles', isAuthenticated, async (_req, res) => {
     try {
       const profiles = await storage.getStudentProfiles();
