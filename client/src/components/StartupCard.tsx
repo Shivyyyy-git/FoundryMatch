@@ -1,64 +1,27 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Calendar, TrendingUp, ExternalLink } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { Users, ExternalLink } from "lucide-react";
 
 interface StartupCardProps {
-  id: number;
   name: string;
   tagline: string;
   description: string;
   category: string;
-  teamSize?: number;
-  founded?: string;
+  teamSize: number;
   image?: string;
-  websiteUrl?: string;
-  upvotes?: number;
-  stage?: string;
-  seeking?: string[];
+  founded?: string;
 }
 
 export function StartupCard({
-  id,
   name,
   tagline,
   description,
   category,
   teamSize,
-  founded,
   image,
-  websiteUrl,
-  upvotes = 0,
-  stage,
-  seeking = [],
+  founded = "2024"
 }: StartupCardProps) {
-  const { toast } = useToast();
-
-  const upvoteMutation = useMutation({
-    mutationFn: () => apiRequest("POST", `/api/startups/${id}/upvote`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/startups"] });
-      toast({
-        title: "Upvoted!",
-        description: "Thanks for supporting this startup!",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to upvote",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleUpvote = () => {
-    upvoteMutation.mutate();
-  };
-
   return (
     <Card className="overflow-hidden hover-elevate" data-testid={`card-startup-${name.toLowerCase().replace(/\s+/g, '-')}`}>
       {image && (
@@ -94,80 +57,33 @@ export function StartupCard({
           {description}
         </p>
         
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex items-center justify-between mb-4">
           <Badge variant="secondary" data-testid="badge-category">
             {category}
           </Badge>
-          {stage && (
-            <Badge variant="secondary" data-testid="badge-stage">
-              {stage}
-            </Badge>
-          )}
-        </div>
-
-        {seeking && seeking.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            {seeking.slice(0, 3).map((item) => (
-              <Badge 
-                key={item}
-                className="bg-primary/20 text-primary border-primary/30 text-xs"
-                data-testid={`badge-seeking-${item.toLowerCase()}`}
-              >
-                Seeking: {item}
-              </Badge>
-            ))}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Users className="h-4 w-4" />
+            <span>{teamSize} members</span>
           </div>
-        )}
-        
-        <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
-          {teamSize && (
-            <div className="flex items-center gap-1">
-              <Users className="h-3 w-3" />
-              <span>{teamSize} members</span>
-            </div>
-          )}
-          {founded && (
-            <div className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              <span>Founded {founded}</span>
-            </div>
-          )}
         </div>
         
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleUpvote}
-            disabled={upvoteMutation.isPending}
+          <Button 
+            variant="outline" 
+            size="sm" 
             className="flex-1"
-            data-testid="button-upvote"
+            data-testid="button-learn-more"
           >
-            <TrendingUp className="h-4 w-4 mr-1" />
-            {upvotes}
+            Learn More
           </Button>
-          {websiteUrl ? (
-            <Button 
-              size="sm" 
-              className="flex-1"
-              asChild
-              data-testid="button-visit"
-            >
-              <a href={websiteUrl} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-4 w-4 mr-1" />
-                Visit
-              </a>
-            </Button>
-          ) : (
-            <Button 
-              size="sm" 
-              variant="outline"
-              className="flex-1"
-              data-testid="button-learn-more"
-            >
-              Learn More
-            </Button>
-          )}
+          <Button 
+            size="sm" 
+            className="flex-1"
+            data-testid="button-visit"
+          >
+            <ExternalLink className="h-4 w-4 mr-1" />
+            Visit
+          </Button>
         </div>
       </div>
     </Card>

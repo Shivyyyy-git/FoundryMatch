@@ -40,11 +40,13 @@ export function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4">
           <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2 hover-elevate active-elevate-2 rounded-lg px-2 py-1" data-testid="link-home">
-              <Rocket className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold text-foreground">
-                Foundry StartupMatch
-              </span>
+            <Link href="/">
+              <a className="flex items-center gap-2 hover-elevate active-elevate-2 rounded-lg px-2 py-1" data-testid="link-home">
+                <Rocket className="h-6 w-6 text-primary" />
+                <span className="text-xl font-bold text-foreground">
+                  Foundry StartupMatch
+                </span>
+              </a>
             </Link>
             
             <div className="hidden md:flex items-center gap-1">
@@ -52,15 +54,17 @@ export function Navigation() {
                 const Icon = item.icon;
                 const isActive = location === item.path;
                 return (
-                  <Link key={item.path} href={item.path} data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={isActive ? "bg-secondary" : ""}
-                    >
-                      {Icon && <Icon className="h-4 w-4 mr-2" />}
-                      {item.label}
-                    </Button>
+                  <Link key={item.path} href={item.path}>
+                    <a data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={isActive ? "bg-secondary" : ""}
+                      >
+                        {Icon && <Icon className="h-4 w-4 mr-2" />}
+                        {item.label}
+                      </Button>
+                    </a>
                   </Link>
                 );
               })}
