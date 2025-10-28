@@ -8,6 +8,51 @@ The application follows a full-stack architecture with React on the frontend, Ex
 
 ## Recent Changes (October 28, 2025)
 
+**Production-Ready Features (Latest):**
+- **Database Performance Optimization:**
+  - Added indexes on frequently queried fields: `projects.skills`, `projects.is_approved`, `users.major`, `users.year`, `users.availability`, and timestamp fields
+  - Optimized queries for 3,000+ student user base
+  - Compound indexes for common filter combinations
+  
+- **Pagination System:**
+  - Implemented pagination across Project Gigs, Startup Showcase, and Team Matching pages
+  - 20 items per page with "Load More" button for progressive loading
+  - Server-side pagination with offset/limit queries for scalability
+  - Loading states and smooth UX transitions
+  
+- **Search & Discovery:**
+  - Universal search bar component filtering projects, startups, and students by keywords
+  - Server-side search queries passed through TanStack Query
+  - Search across multiple fields: titles, descriptions, skills, bios, names
+  - Clear search functionality with visual feedback
+  - Search integrated with pagination system
+  
+- **Advanced Filtering:**
+  - Project Gigs: Client-side filter by project type (paid, unpaid, equity, course credit, volunteer)
+  - Team Matching: Client-side filter by major (CS, Engineering, Business, etc.) and year (Freshman-PhD)
+  - Hybrid approach: server-side search + client-side type/attribute filtering
+  - Multiple filter support with "AND" logic
+  - Filter state maintained in component state (resets on navigation)
+  - Client-side filtering suitable for MVP scale (3k users)
+  
+- **User Profile Editing:**
+  - Comprehensive profile editing page at `/profile` route
+  - Editable fields: bio, skills (array), major, year, availability
+  - Strict validation preventing empty/whitespace submissions
+  - Academic metadata (major, year, availability) cannot be cleared once set
+  - Proper REST PATCH semantics (only updates provided fields)
+  - Real-time validation with error messages
+  - Toast notifications for success/failure feedback
+  
+- **Documentation Suite:**
+  - User Guide (/user-guide): Step-by-step instructions for using platform features
+  - FAQ (/faq): 12 common questions with accordion interface
+  - Getting Started (/getting-started): 5-step interactive onboarding flow
+  - All pages have complete data-testid coverage for E2E testing
+  - Cross-referenced content for easy navigation
+  - Support contact information (support@matchupfoundry.com)
+  - SEO-optimized with proper meta tags
+
 **Complete Button Functionality Fix:**
 - Fixed all interactive buttons across the application with toast notifications
 - StudentCard: "View Profile" and "Connect" buttons now show feedback
@@ -51,7 +96,10 @@ The application follows a full-stack architecture with React on the frontend, Ex
 
 ## User Preferences
 
-Preferred communication style: Simple, everyday language.
+- Preferred communication style: Simple, everyday language
+- Design choice: Client-side filtering acceptable for MVP at 3k user scale; would need server-side filtering if data grows 10x
+- Validation requirement: Profile updates reject empty strings and whitespace-only values for major/year/availability (required academic metadata)
+- Testing requirement: All interactive elements (links, buttons) must have unique data-testid attributes for E2E testing
 
 ## System Architecture
 
@@ -122,10 +170,14 @@ Preferred communication style: Simple, everyday language.
 
 **Current Data Models**
 - Users: Profile information from OIDC (email, name, profile image) + extended fields (major, year, bio, skills, availability, isAdmin)
+  - Indexes: major, year, availability for efficient filtering
 - Sessions: Express session storage for authentication state
-- Projects: Title, company, description, skills needed, compensation type, time commitment, team size, approval status, user reference
-- Startups: Name, tagline, description, category, website, team size, approval status, user reference
+- Projects: Title, company, description, skills needed, compensation type, time commitment, team size, approval status, user reference, created_at
+  - Indexes: skills (GIN index for array search), is_approved, created_at for efficient queries and filtering
+- Startups: Name, tagline, description, category, website, team size, approval status, user reference, created_at
+  - Indexes: is_approved, created_at for efficient queries
 - Messages: Sender, receiver, content, timestamp, read status
+  - Indexes: sender_id, receiver_id, created_at for conversation queries
 
 ### Key Architectural Decisions
 
@@ -157,8 +209,8 @@ Preferred communication style: Simple, everyday language.
 
 **File Organization**
 - Component co-location: UI components in `client/src/components/ui/`
-- Feature components: Domain-specific components (StudentCard, ProjectCard, etc.)
-- Page-level components: `client/src/pages/` for route handlers
+- Feature components: Domain-specific components (StudentCard, ProjectCard, SearchBar, FilterControls, etc.)
+- Page-level components: `client/src/pages/` for route handlers including Profile, UserGuide, FAQ, GettingStarted
 - Shared types and schemas: `shared/` directory accessible to both client and server
 
 **Build & Deployment**
