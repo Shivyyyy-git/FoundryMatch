@@ -47,6 +47,25 @@ export const users = pgTable("users", {
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
+// Profile update schema with validation - require non-empty, non-whitespace strings for academic fields
+export const updateProfileSchema = z.object({
+  bio: z.string().optional(),
+  major: z.string()
+    .min(1, "Major cannot be empty")
+    .refine((val) => val.trim().length > 0, { message: "Major cannot be whitespace" })
+    .optional(),
+  year: z.string()
+    .min(1, "Year cannot be empty")
+    .refine((val) => val.trim().length > 0, { message: "Year cannot be whitespace" })
+    .optional(),
+  availability: z.string()
+    .min(1, "Availability cannot be empty")
+    .refine((val) => val.trim().length > 0, { message: "Availability cannot be whitespace" })
+    .optional(),
+  skills: z.array(z.string()).optional(),
+});
+export type UpdateProfile = z.infer<typeof updateProfileSchema>;
+
 // Projects/Gigs table
 export const projects = pgTable("projects", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

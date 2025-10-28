@@ -12,6 +12,7 @@ import TeamMatching from "@/pages/TeamMatching";
 import ProjectGigs from "@/pages/ProjectGigs";
 import StartupShowcase from "@/pages/StartupShowcase";
 import Messages from "@/pages/Messages";
+import Profile from "@/pages/Profile";
 import Admin from "@/pages/Admin";
 import NotFound from "@/pages/not-found";
 
@@ -50,6 +51,7 @@ function Router() {
       <Route path="/project-gigs" component={ProjectGigs} />
       <Route path="/startup-showcase" component={StartupShowcase} />
       <Route path="/messages" component={Messages} />
+      <Route path="/profile" component={Profile} />
       <Route path="/admin" component={Admin} />
       <Route path="/:rest*" component={NotFound} />
     </Switch>

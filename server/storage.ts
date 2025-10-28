@@ -79,9 +79,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserProfile(id: string, data: Partial<User>): Promise<User> {
+    // Filter out undefined values to prevent overwriting existing data with null
+    const updateData: any = { updatedAt: new Date() };
+    Object.keys(data).forEach(key => {
+      if (data[key as keyof typeof data] !== undefined) {
+        updateData[key] = data[key as keyof typeof data];
+      }
+    });
+    
     const [user] = await db
       .update(users)
-      .set({ ...data, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(users.id, id))
       .returning();
     return user;

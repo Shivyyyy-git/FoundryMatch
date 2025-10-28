@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertProjectSchema, insertStartupSchema, insertMessageSchema } from "@shared/schema";
+import { insertProjectSchema, insertStartupSchema, insertMessageSchema, updateProfileSchema } from "@shared/schema";
 
 // Admin middleware
 const isAdmin = async (req: any, res: any, next: any) => {
@@ -52,10 +52,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/users/profile', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const user = await storage.updateUserProfile(userId, req.body);
+      const validated = updateProfileSchema.parse(req.body);
+      const user = await storage.updateUserProfile(userId, validated);
       res.json(user);
     } catch (error) {
       console.error("Error updating profile:", error);
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ message: "Invalid profile data" });
+      }
       res.status(500).json({ message: "Failed to update profile" });
     }
   });
