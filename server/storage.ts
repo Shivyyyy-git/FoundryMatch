@@ -64,16 +64,62 @@ export class DatabaseStorage implements IStorage {
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
+    // Validate required fields
+    if (!userData.email) {
+      throw new Error("Email is required for user authentication");
+    }
+    if (!userData.id) {
+      throw new Error("User ID (OIDC sub) is required for authentication");
+    }
+
+    // Try to find user by id first (OIDC sub is the stable identifier)
+    const [existingById] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userData.id));
+
+    if (existingById) {
+      // User exists with this id - update their profile (email can change, but not id)
+      const { id, ...updateFields } = userData;
+      const [updated] = await db
+        .update(users)
+        .set({
+          ...updateFields,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, userData.id))
+        .returning();
+      return updated;
+    }
+
+    // Not found by id - check if email already exists
+    const [existingByEmail] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, userData.email));
+
+    if (existingByEmail) {
+      // Email exists with different OIDC sub - this is a conflict scenario
+      // Cannot safely merge accounts without breaking session/FK references
+      // For MVP: Use simple onConflictDoUpdate on the id field
+      const [upserted] = await db
+        .insert(users)
+        .values(userData)
+        .onConflictDoUpdate({
+          target: users.id,
+          set: {
+            ...userData,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+      return upserted;
+    }
+
+    // No existing user found - insert new record
     const [user] = await db
       .insert(users)
       .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
       .returning();
     return user;
   }
