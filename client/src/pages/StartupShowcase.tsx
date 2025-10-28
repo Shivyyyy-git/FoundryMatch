@@ -45,6 +45,7 @@ interface PaginatedResponse {
 export default function StartupShowcase() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const { toast } = useToast();
 
   const {
@@ -77,7 +78,15 @@ export default function StartupShowcase() {
     initialPageParam: 0,
   });
 
-  const startups = data?.pages.flatMap(page => page.data) ?? [];
+  const allStartups = data?.pages.flatMap(page => page.data) ?? [];
+  
+  // Apply client-side filters
+  const startups = allStartups.filter(startup => {
+    if (categoryFilter !== "all" && startup.category !== categoryFilter) {
+      return false;
+    }
+    return true;
+  });
 
   const createStartupMutation = useMutation({
     mutationFn: async (data: InsertStartup) => {
@@ -271,27 +280,19 @@ export default function StartupShowcase() {
                 placeholder="Search startups by name, description, or category..."
               />
             </div>
-            <Select>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-full sm:w-48" data-testid="select-category">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="edtech">EdTech</SelectItem>
-                <SelectItem value="food">Food & Delivery</SelectItem>
-                <SelectItem value="sustainability">Sustainability</SelectItem>
-                <SelectItem value="social">Social</SelectItem>
-                <SelectItem value="career">Career</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select>
-              <SelectTrigger className="w-full sm:w-48" data-testid="select-sort">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="newest">Newest First</SelectItem>
-                <SelectItem value="oldest">Oldest First</SelectItem>
-                <SelectItem value="team-size">Team Size</SelectItem>
+                <SelectItem value="EdTech">EdTech</SelectItem>
+                <SelectItem value="Food & Delivery">Food & Delivery</SelectItem>
+                <SelectItem value="Sustainability">Sustainability</SelectItem>
+                <SelectItem value="Social">Social</SelectItem>
+                <SelectItem value="Career">Career</SelectItem>
+                <SelectItem value="FinTech">FinTech</SelectItem>
+                <SelectItem value="HealthTech">HealthTech</SelectItem>
               </SelectContent>
             </Select>
           </div>

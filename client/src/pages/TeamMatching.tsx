@@ -2,6 +2,13 @@ import { StudentCard } from "@/components/StudentCard";
 import { FilterSidebar } from "@/components/FilterSidebar";
 import { SearchBar } from "@/components/SearchBar";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
@@ -17,6 +24,8 @@ interface PaginatedResponse {
 export default function TeamMatching() {
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [majorFilter, setMajorFilter] = useState("all");
+  const [yearFilter, setYearFilter] = useState("all");
   const { toast } = useToast();
 
   const {
@@ -48,8 +57,20 @@ export default function TeamMatching() {
     initialPageParam: 0,
   });
 
-  const users = data?.pages.flatMap(page => page.data) ?? [];
-  const students = users.filter(u => u.major || u.bio || (u.skills && u.skills.length > 0));
+  const allUsers = data?.pages.flatMap(page => page.data) ?? [];
+  
+  // Apply client-side filters
+  const students = allUsers
+    .filter(u => u.major || u.bio || (u.skills && u.skills.length > 0))
+    .filter(student => {
+      if (majorFilter !== "all" && student.major !== majorFilter) {
+        return false;
+      }
+      if (yearFilter !== "all" && student.year !== yearFilter) {
+        return false;
+      }
+      return true;
+    });
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -90,12 +111,43 @@ export default function TeamMatching() {
           </aside>
 
           <main className="flex-1 min-w-0">
-            <div className="mb-6">
+            <div className="mb-4">
               <SearchBar 
                 value={searchQuery}
                 onChange={setSearchQuery}
                 placeholder="Search students by name, major, or skills..."
               />
+            </div>
+            
+            <div className="mb-6 flex flex-col sm:flex-row gap-4">
+              <Select value={majorFilter} onValueChange={setMajorFilter}>
+                <SelectTrigger className="w-full sm:w-64" data-testid="select-major-filter">
+                  <SelectValue placeholder="Filter by Major" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Majors</SelectItem>
+                  <SelectItem value="Computer Science">Computer Science</SelectItem>
+                  <SelectItem value="Engineering">Engineering</SelectItem>
+                  <SelectItem value="Business">Business</SelectItem>
+                  <SelectItem value="Design">Design</SelectItem>
+                  <SelectItem value="Data Science">Data Science</SelectItem>
+                  <SelectItem value="Mathematics">Mathematics</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={yearFilter} onValueChange={setYearFilter}>
+                <SelectTrigger className="w-full sm:w-64" data-testid="select-year-filter">
+                  <SelectValue placeholder="Filter by Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Years</SelectItem>
+                  <SelectItem value="Freshman">Freshman</SelectItem>
+                  <SelectItem value="Sophomore">Sophomore</SelectItem>
+                  <SelectItem value="Junior">Junior</SelectItem>
+                  <SelectItem value="Senior">Senior</SelectItem>
+                  <SelectItem value="Graduate">Graduate</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             
             <div className="mb-6">

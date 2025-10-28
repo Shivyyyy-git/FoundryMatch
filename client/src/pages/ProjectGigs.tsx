@@ -45,6 +45,7 @@ interface PaginatedResponse {
 export default function ProjectGigs() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
   const { toast } = useToast();
 
   const {
@@ -77,7 +78,15 @@ export default function ProjectGigs() {
     initialPageParam: 0,
   });
 
-  const projects = data?.pages.flatMap(page => page.data) ?? [];
+  const allProjects = data?.pages.flatMap(page => page.data) ?? [];
+  
+  // Apply client-side filters
+  const projects = allProjects.filter(project => {
+    if (typeFilter !== "all" && project.type !== typeFilter) {
+      return false;
+    }
+    return true;
+  });
 
   const createProjectMutation = useMutation({
     mutationFn: async (data: InsertProject) => {
@@ -355,7 +364,7 @@ export default function ProjectGigs() {
                 placeholder="Search projects by title, company, or description..."
               />
             </div>
-            <Select>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-full sm:w-48" data-testid="select-project-type">
                 <SelectValue placeholder="Project Type" />
               </SelectTrigger>
@@ -364,18 +373,6 @@ export default function ProjectGigs() {
                 <SelectItem value="paid">Paid</SelectItem>
                 <SelectItem value="credit">For Credit</SelectItem>
                 <SelectItem value="volunteer">Volunteer</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select>
-              <SelectTrigger className="w-full sm:w-48" data-testid="select-category">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="tech">Technology</SelectItem>
-                <SelectItem value="design">Design</SelectItem>
-                <SelectItem value="business">Business</SelectItem>
-                <SelectItem value="research">Research</SelectItem>
               </SelectContent>
             </Select>
           </div>
