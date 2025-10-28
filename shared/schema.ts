@@ -38,7 +38,11 @@ export const users = pgTable("users", {
   isAdmin: boolean("is_admin").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_users_major_year_availability").on(table.major, table.year, table.availability),
+  index("idx_users_skills").using("gin", table.skills),
+  index("idx_users_created_at").on(table.createdAt),
+]);
 
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -57,7 +61,13 @@ export const projects = pgTable("projects", {
   userId: varchar("user_id").notNull().references(() => users.id),
   isApproved: boolean("is_approved").default(false),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_projects_approved").on(table.isApproved).where(sql`${table.isApproved} = true`),
+  index("idx_projects_type_approved").on(table.type, table.isApproved),
+  index("idx_projects_skills").using("gin", table.skills),
+  index("idx_projects_created_at").on(table.createdAt),
+  index("idx_projects_user_id").on(table.userId),
+]);
 
 export const insertProjectSchema = createInsertSchema(projects).omit({
   id: true,
@@ -81,7 +91,12 @@ export const startups = pgTable("startups", {
   userId: varchar("user_id").notNull().references(() => users.id),
   isApproved: boolean("is_approved").default(false),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_startups_approved").on(table.isApproved).where(sql`${table.isApproved} = true`),
+  index("idx_startups_category_approved").on(table.category, table.isApproved),
+  index("idx_startups_created_at").on(table.createdAt),
+  index("idx_startups_user_id").on(table.userId),
+]);
 
 export const insertStartupSchema = createInsertSchema(startups).omit({
   id: true,
@@ -100,7 +115,11 @@ export const messages = pgTable("messages", {
   content: text("content").notNull(),
   isRead: boolean("is_read").default(false),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_messages_sender_receiver").on(table.senderId, table.receiverId, table.createdAt),
+  index("idx_messages_receiver_sender").on(table.receiverId, table.senderId, table.createdAt),
+  index("idx_messages_unread").on(table.isRead, table.receiverId).where(sql`${table.isRead} = false`),
+]);
 
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
