@@ -1,8 +1,8 @@
-# Foundry StartupMatch
+# MatchUp Foundry
 
 ## Overview
 
-Foundry StartupMatch is a university-based networking platform designed for the University of Rochester community. The platform connects students with startup opportunities, project gigs, and team collaboration experiences. It features a modern web interface with user authentication, admin approval workflows, and dynamic content discovery.
+MatchUp Foundry is a university-based networking platform designed for the University of Rochester community. The platform connects students with startup opportunities, project gigs, and team collaboration experiences. It features a modern web interface with user authentication, admin approval workflows, and dynamic content discovery.
 
 The application follows a full-stack architecture with React on the frontend, Express on the backend, and PostgreSQL for data persistence. Authentication is handled through Replit's OIDC integration (supporting Google login and other providers), and the UI is built using shadcn/ui components with a custom University of Rochester brand theme.
 

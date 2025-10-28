@@ -67,7 +67,7 @@ export function Navigation() {
             <Link href="/" className="flex items-center gap-2 hover-elevate active-elevate-2 rounded-lg px-2 py-1" data-testid="link-home">
               <Rocket className="h-6 w-6 text-primary" />
               <span className="text-xl font-bold text-foreground">
-                Foundry StartupMatch
+                MatchUp Foundry
               </span>
             </Link>
             
