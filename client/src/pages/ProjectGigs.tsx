@@ -9,67 +9,44 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, Plus } from "lucide-react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import type { Project } from "@shared/schema";
 
 export default function ProjectGigs() {
-  const projects = [
-    {
-      title: "Mobile App Developer",
-      company: "HealthTech Startup",
-      description: "We're building a mobile app to help students track their mental health and wellness. Looking for a React Native developer to join our founding team.",
-      skills: ["React Native", "TypeScript", "Firebase", "UI/UX"],
-      timeCommitment: "10-15 hrs/week",
-      teamSize: "3-4 members",
-      deadline: "Apply by Feb 15",
-      type: "credit" as const
-    },
-    {
-      title: "UX/UI Designer Wanted",
-      company: "Social Impact Project",
-      description: "Design an intuitive interface for a platform connecting volunteers with local nonprofits. Make a real difference in the community.",
-      skills: ["Figma", "UI/UX", "User Research", "Prototyping"],
-      timeCommitment: "8-10 hrs/week",
-      teamSize: "2-3 members",
-      type: "volunteer" as const
-    },
-    {
-      title: "Data Analyst Position",
-      company: "Environmental Research Lab",
-      description: "Analyze climate data and create compelling visualizations for our environmental research project. Work with real-world datasets.",
-      skills: ["Python", "Data Viz", "Statistics", "Pandas"],
-      timeCommitment: "5-8 hrs/week",
-      teamSize: "1-2 members",
-      deadline: "Apply by Feb 20",
-      type: "paid" as const
-    },
-    {
-      title: "Full Stack Developer",
-      company: "EdTech Platform",
-      description: "Build features for an online learning platform used by thousands of students. Work with modern tech stack and agile methodology.",
-      skills: ["React", "Node.js", "MongoDB", "TypeScript"],
-      timeCommitment: "12-15 hrs/week",
-      teamSize: "4-5 members",
-      type: "paid" as const
-    },
-    {
-      title: "Marketing Specialist",
-      company: "Student Startup",
-      description: "Help us grow our user base and build our brand. Create content, manage social media, and develop marketing strategies.",
-      skills: ["Marketing", "Social Media", "Content Creation", "Analytics"],
-      timeCommitment: "6-8 hrs/week",
-      teamSize: "2-3 members",
-      type: "credit" as const
-    },
-    {
-      title: "Backend Engineer",
-      company: "FinTech Project",
-      description: "Develop secure and scalable APIs for a financial services platform. Experience with cloud infrastructure is a plus.",
-      skills: ["Python", "Django", "PostgreSQL", "AWS"],
-      timeCommitment: "10-12 hrs/week",
-      teamSize: "3-4 members",
-      deadline: "Apply by Feb 18",
-      type: "paid" as const
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+
+  const { data: projects, isLoading } = useQuery<Project[]>({
+    queryKey: ['/api/projects'],
+  });
+
+  const filteredProjects = projects?.filter((project) => {
+    if (search) {
+      const searchLower = search.toLowerCase();
+      const titleMatch = project.title.toLowerCase().includes(searchLower);
+      const descMatch = project.description ? project.description.toLowerCase().includes(searchLower) : false;
+      if (!titleMatch && !descMatch) {
+        return false;
+      }
     }
-  ];
+    if (typeFilter && project.compensation !== typeFilter) {
+      return false;
+    }
+    if (categoryFilter && project.category !== categoryFilter) {
+      return false;
+    }
+    return true;
+  }) || [];
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading projects...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -96,30 +73,32 @@ export default function ProjectGigs() {
               <Input
                 placeholder="Search projects..."
                 className="pl-9"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                 data-testid="input-search-projects"
               />
             </div>
-            <Select>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-full sm:w-48" data-testid="select-project-type">
                 <SelectValue placeholder="Project Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="">All Types</SelectItem>
                 <SelectItem value="paid">Paid</SelectItem>
                 <SelectItem value="credit">For Credit</SelectItem>
                 <SelectItem value="volunteer">Volunteer</SelectItem>
               </SelectContent>
             </Select>
-            <Select>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-full sm:w-48" data-testid="select-category">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="tech">Technology</SelectItem>
-                <SelectItem value="design">Design</SelectItem>
-                <SelectItem value="business">Business</SelectItem>
-                <SelectItem value="research">Research</SelectItem>
+                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="Technology">Technology</SelectItem>
+                <SelectItem value="Design">Design</SelectItem>
+                <SelectItem value="Business">Business</SelectItem>
+                <SelectItem value="Research">Research</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -129,21 +108,32 @@ export default function ProjectGigs() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <p className="text-sm text-muted-foreground">
-            {projects.length} opportunities available
+            {filteredProjects.length} projects available
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project, index) => (
-            <ProjectCard key={index} {...project} />
-          ))}
-        </div>
-
-        <div className="mt-8 flex justify-center">
-          <Button variant="outline" data-testid="button-load-more">
-            Load More Projects
-          </Button>
-        </div>
+        {filteredProjects.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No projects found. Try adjusting your filters.</p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProjects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                id={project.id}
+                title={project.title}
+                company={project.userId}
+                description={project.description}
+                skills={project.skillsNeeded || []}
+                timeCommitment={project.commitment || ""}
+                teamSize=""
+                type={project.compensation as "paid" | "volunteer" | "credit" | undefined}
+                status={project.status || "open"}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

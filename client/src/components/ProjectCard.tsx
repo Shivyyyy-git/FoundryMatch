@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, Users, Calendar } from "lucide-react";
 
 interface ProjectCardProps {
+  id: number;
   title: string;
   company: string;
   description: string;
@@ -12,9 +13,11 @@ interface ProjectCardProps {
   teamSize: string;
   deadline?: string;
   type?: "paid" | "volunteer" | "credit";
+  status?: string;
 }
 
 export function ProjectCard({
+  id,
   title,
   company,
   description,
@@ -22,7 +25,8 @@ export function ProjectCard({
   timeCommitment,
   teamSize,
   deadline,
-  type = "volunteer"
+  type = "volunteer",
+  status = "open"
 }: ProjectCardProps) {
   const typeColors = {
     paid: "bg-chart-3/20 text-chart-3 border-chart-3/30",
