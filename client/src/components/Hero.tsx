@@ -1,9 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { useLocation } from "wouter";
 import heroImage from "@assets/generated_images/University_collaboration_hero_image_6cf03e81.png";
 
 export function Hero() {
+  const [, setLocation] = useLocation();
+
   return (
     <div className="relative overflow-hidden">
       <div 
@@ -35,6 +38,7 @@ export function Hero() {
               size="lg" 
               className="h-12 px-8"
               data-testid="button-search"
+              onClick={() => setLocation("/project-gigs")}
             >
               Search
             </Button>
@@ -46,6 +50,7 @@ export function Hero() {
               size="lg"
               className="backdrop-blur-md bg-white/20 border-white/40 text-white hover:bg-white/30"
               data-testid="button-browse-teams"
+              onClick={() => setLocation("/team-matching")}
             >
               Browse Teams
             </Button>
@@ -54,6 +59,7 @@ export function Hero() {
               size="lg"
               className="backdrop-blur-md bg-white/20 border-white/40 text-white hover:bg-white/30"
               data-testid="button-post-project"
+              onClick={() => setLocation("/project-gigs")}
             >
               Post a Project
             </Button>

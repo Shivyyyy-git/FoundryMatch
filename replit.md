@@ -8,6 +8,10 @@ The application follows a full-stack architecture with React on the frontend, Ex
 
 ## Recent Changes (October 28, 2025)
 
+**Button Functionality Fix:**
+- Fixed missing onClick handlers on Hero and Home page buttons
+- All navigation buttons now work correctly (Search, Browse Teams, Post a Project, Create Your Profile, Browse Opportunities)
+
 **Complete Database Backend Implementation:**
 - Built complete database schema with Projects, Startups, Messages, and extended Users tables
 - Implemented comprehensive storage layer with CRUD operations for all entities

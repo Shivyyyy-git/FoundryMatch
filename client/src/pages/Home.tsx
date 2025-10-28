@@ -3,11 +3,13 @@ import { StartupCard } from "@/components/StartupCard";
 import { ProjectCard } from "@/components/ProjectCard";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Users, Briefcase, Rocket } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import showcaseImage from "@assets/generated_images/Startup_showcase_image_1_6effd381.png";
 import teamImage from "@assets/generated_images/Startup_team_photo_cb2f6363.png";
 
 export default function Home() {
+  const [, setLocation] = useLocation();
+
   return (
     <div className="min-h-screen">
       <Hero />
@@ -175,6 +177,7 @@ export default function Home() {
               size="lg" 
               variant="secondary"
               data-testid="button-create-profile"
+              onClick={() => setLocation("/team-matching")}
             >
               Create Your Profile
             </Button>
@@ -183,6 +186,7 @@ export default function Home() {
               variant="outline"
               className="border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground/10"
               data-testid="button-browse-opportunities"
+              onClick={() => setLocation("/project-gigs")}
             >
               Browse Opportunities
             </Button>
