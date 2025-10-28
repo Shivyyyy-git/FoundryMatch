@@ -13,6 +13,9 @@ import ProjectGigs from "@/pages/ProjectGigs";
 import StartupShowcase from "@/pages/StartupShowcase";
 import Messages from "@/pages/Messages";
 import Profile from "@/pages/Profile";
+import UserGuide from "@/pages/UserGuide";
+import FAQ from "@/pages/FAQ";
+import GettingStarted from "@/pages/GettingStarted";
 import Admin from "@/pages/Admin";
 import NotFound from "@/pages/not-found";
 
@@ -52,6 +55,9 @@ function Router() {
       <Route path="/startup-showcase" component={StartupShowcase} />
       <Route path="/messages" component={Messages} />
       <Route path="/profile" component={Profile} />
+      <Route path="/user-guide" component={UserGuide} />
+      <Route path="/faq" component={FAQ} />
+      <Route path="/getting-started" component={GettingStarted} />
       <Route path="/admin" component={Admin} />
       <Route path="/:rest*" component={NotFound} />
     </Switch>
