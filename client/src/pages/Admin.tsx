@@ -28,25 +28,28 @@ export default function Admin() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: users = [] } = useQuery<User[]>({
+  const { data: usersResponse } = useQuery<{ data: User[]; total: number }>({
     queryKey: ["/api/users"],
   });
+  const users = usersResponse?.data || [];
 
-  const { data: allProjects = [] } = useQuery<Project[]>({
+  const { data: projectsResponse } = useQuery<{ data: Project[] }>({
     queryKey: ["/api/projects"],
     queryFn: async () => {
       const res = await fetch("/api/projects", { credentials: "include" });
       return res.json();
     },
   });
+  const allProjects = projectsResponse?.data || [];
 
-  const { data: allStartups = [] } = useQuery<Startup[]>({
+  const { data: startupsResponse } = useQuery<{ data: Startup[] }>({
     queryKey: ["/api/startups"],
     queryFn: async () => {
       const res = await fetch("/api/startups", { credentials: "include" });
       return res.json();
     },
   });
+  const allStartups = startupsResponse?.data || [];
 
   const pendingProjects = allProjects.filter(p => !p.isApproved);
   const pendingStartups = allStartups.filter(s => !s.isApproved);
