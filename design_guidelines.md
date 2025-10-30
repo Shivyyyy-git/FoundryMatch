@@ -1,4 +1,4 @@
-# MatchUp Foundry Design Guidelines
+# MatchMeUp Foundry Design Guidelines
 
 ## Design Approach
 

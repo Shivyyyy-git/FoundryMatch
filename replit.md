@@ -1,8 +1,8 @@
-# MatchUp Foundry
+# MatchMeUp Foundry
 
 ## Overview
 
-MatchUp Foundry is a university-based networking platform designed for the University of Rochester community. The platform connects students with startup opportunities, project gigs, and team collaboration experiences. It features a modern web interface with user authentication, admin approval workflows, and dynamic content discovery.
+MatchMeUp Foundry is a university-based networking platform designed for the University of Rochester community. The platform connects students with startup opportunities, project gigs, and team collaboration experiences. It features a modern web interface with user authentication, admin approval workflows, and dynamic content discovery.
 
 The application follows a full-stack architecture with React on the frontend, Express on the backend, and PostgreSQL for data persistence. Authentication is handled through Replit's OIDC integration (supporting Google login and other providers), and the UI is built using shadcn/ui components with a custom University of Rochester brand theme.
 
@@ -50,7 +50,7 @@ The application follows a full-stack architecture with React on the frontend, Ex
   - Getting Started (/getting-started): 5-step interactive onboarding flow
   - All pages have complete data-testid coverage for E2E testing
   - Cross-referenced content for easy navigation
-  - Support contact information (support@matchupfoundry.com)
+  - Support contact information (support@matchmeupfoundry.com)
   - SEO-optimized with proper meta tags
 
 **Complete Button Functionality Fix:**
@@ -96,7 +96,7 @@ The application follows a full-stack architecture with React on the frontend, Ex
 
 **Authentication Upsert Logic (Final Implementation):**
 - **Scenario 1 - Returning User (Same OIDC Sub):** Lookup by sub (users.id), update profile including email if changed
-- **Scenario 2 - Email Conflict (Different Sub, Same Email):** Reject login with clear error directing to support@matchupfoundry.com (MVP solution prevents FK violations and session/id mismatches)
+- **Scenario 2 - Email Conflict (Different Sub, Same Email):** Reject login with clear error directing to support@matchmeupfoundry.com (MVP solution prevents FK violations and session/id mismatches)
 - **Scenario 3 - New User (New Sub, New Email):** Insert new user record
 - **Security:** Email unique constraint enforced, required field validation, no primary key updates (avoids FK violations)
 - **Design Decision:** For MVP at 3k user scale, email conflicts are rejected rather than implementing complex account merging (OIDC subs are stable in practice)

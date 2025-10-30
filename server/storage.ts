@@ -104,7 +104,7 @@ export class DatabaseStorage implements IStorage {
       // For MVP: Reject the conflicting login with clear error message
       throw new Error(
         `Email ${userData.email} is already registered with a different account. ` +
-        `Please contact support at support@matchupfoundry.com for assistance.`
+        `Please contact support at support@matchmeupfoundry.com for assistance.`
       );
     }
 

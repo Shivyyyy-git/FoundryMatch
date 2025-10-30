@@ -8,7 +8,7 @@ export default function UserGuide() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-4xl font-bold text-primary-foreground mb-4">User Guide</h1>
           <p className="text-xl text-primary-foreground/90">
-            Learn how to make the most of MatchUp Foundry
+            Learn how to make the most of MatchMeUp Foundry
           </p>
         </div>
       </div>
@@ -151,8 +151,8 @@ export default function UserGuide() {
           <CardContent>
             <p className="text-foreground">
               Visit the <a href="/faq" className="text-primary hover:underline font-semibold" data-testid="link-faq">FAQ page</a> for answers to common questions, or reach out to our support team at{" "}
-              <a href="mailto:support@matchupfoundry.com" className="text-primary hover:underline" data-testid="link-support-email">
-                support@matchupfoundry.com
+              <a href="mailto:support@matchmeupfoundry.com" className="text-primary hover:underline" data-testid="link-support-email">
+                support@matchmeupfoundry.com
               </a>
             </p>
           </CardContent>

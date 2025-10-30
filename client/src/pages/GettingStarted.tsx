@@ -52,7 +52,7 @@ export default function GettingStarted() {
       <div className="bg-gradient-to-r from-primary to-primary/80 py-16">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl font-bold text-primary-foreground mb-4">
-            Welcome to MatchUp Foundry
+            Welcome to MatchMeUp Foundry
           </h1>
           <p className="text-2xl text-primary-foreground/90 mb-8">
             Your journey to finding projects, teammates, and opportunities starts here
@@ -105,7 +105,7 @@ export default function GettingStarted() {
           <CardHeader>
             <CardTitle className="text-2xl">Tips for Success</CardTitle>
             <CardDescription>
-              Make the most of MatchUp Foundry with these pro tips
+              Make the most of MatchMeUp Foundry with these pro tips
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -188,7 +188,7 @@ export default function GettingStarted() {
               <p className="text-foreground mb-4">
                 Have questions or need assistance? Our support team is ready to help.
               </p>
-              <a href="mailto:support@matchupfoundry.com" data-testid="link-contact-support">
+              <a href="mailto:support@matchmeupfoundry.com" data-testid="link-contact-support">
                 <Button variant="outline" className="w-full" data-testid="button-contact-support">
                   Contact Support
                 </Button>

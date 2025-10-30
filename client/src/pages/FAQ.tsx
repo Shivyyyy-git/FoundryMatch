@@ -15,7 +15,7 @@ export default function FAQ() {
             Frequently Asked Questions
           </h1>
           <p className="text-xl text-primary-foreground/90">
-            Find answers to common questions about MatchUp Foundry
+            Find answers to common questions about MatchMeUp Foundry
           </p>
         </div>
       </div>
@@ -24,32 +24,32 @@ export default function FAQ() {
         <Accordion type="single" collapsible className="space-y-4">
           <AccordionItem value="item-1">
             <AccordionTrigger className="text-lg font-semibold" data-testid="faq-what-is">
-              What is MatchUp Foundry?
+              What is MatchMeUp Foundry?
             </AccordionTrigger>
             <AccordionContent className="text-foreground">
-              MatchUp Foundry is a networking platform designed specifically for the University of Rochester community. 
+              MatchMeUp Foundry is a networking platform designed specifically for the University of Rochester community. 
               It connects students with startup opportunities, project gigs, and team collaboration experiences. Whether 
-              you're looking for paid internships, academic credit projects, or talented teammates, MatchUp Foundry helps 
+              you're looking for paid internships, academic credit projects, or talented teammates, MatchMeUp Foundry helps 
               you find the right match.
             </AccordionContent>
           </AccordionItem>
 
           <AccordionItem value="item-2">
             <AccordionTrigger className="text-lg font-semibold" data-testid="faq-who-can-use">
-              Who can use MatchUp Foundry?
+              Who can use MatchMeUp Foundry?
             </AccordionTrigger>
             <AccordionContent className="text-foreground">
-              MatchUp Foundry is currently available to all University of Rochester students. You can sign in using your 
+              MatchMeUp Foundry is currently available to all University of Rochester students. You can sign in using your 
               university Google account. Faculty and staff may also join to post project opportunities or mentor student startups.
             </AccordionContent>
           </AccordionItem>
 
           <AccordionItem value="item-3">
             <AccordionTrigger className="text-lg font-semibold" data-testid="faq-free">
-              Is MatchUp Foundry free to use?
+              Is MatchMeUp Foundry free to use?
             </AccordionTrigger>
             <AccordionContent className="text-foreground">
-              Yes! MatchUp Foundry is completely free for all University of Rochester students. You can create a profile, 
+              Yes! MatchMeUp Foundry is completely free for all University of Rochester students. You can create a profile, 
               browse opportunities, connect with teammates, and message other users at no cost.
             </AccordionContent>
           </AccordionItem>
@@ -134,7 +134,7 @@ export default function FAQ() {
             </AccordionTrigger>
             <AccordionContent className="text-foreground">
               Currently, you can edit your own profile at any time by visiting the Profile page. For editing or deleting 
-              projects and startups, please contact our admin team at support@matchupfoundry.com with your request. We're 
+              projects and startups, please contact our admin team at support@matchmeupfoundry.com with your request. We're 
               working on adding self-service editing capabilities in a future update!
             </AccordionContent>
           </AccordionItem>
@@ -156,8 +156,8 @@ export default function FAQ() {
             </AccordionTrigger>
             <AccordionContent className="text-foreground">
               If you encounter inappropriate content or need assistance, please contact our support team at{" "}
-              <a href="mailto:support@matchupfoundry.com" className="text-primary hover:underline" data-testid="link-report-support">
-                support@matchupfoundry.com
+              <a href="mailto:support@matchmeupfoundry.com" className="text-primary hover:underline" data-testid="link-report-support">
+                support@matchmeupfoundry.com
               </a>. We take reports seriously and will review all issues promptly. For urgent matters, include "URGENT" in your 
               email subject line.
             </AccordionContent>
@@ -173,8 +173,8 @@ export default function FAQ() {
             </p>
             <p className="text-foreground">
               Email:{" "}
-              <a href="mailto:support@matchupfoundry.com" className="text-primary hover:underline" data-testid="link-support-email">
-                support@matchupfoundry.com
+              <a href="mailto:support@matchmeupfoundry.com" className="text-primary hover:underline" data-testid="link-support-email">
+                support@matchmeupfoundry.com
               </a>
             </p>
           </CardContent>
