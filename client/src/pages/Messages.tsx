@@ -42,7 +42,7 @@ export default function Messages() {
       const otherUserId = msg.senderId === user.id ? msg.receiverId : msg.senderId;
       
       const existingConv = conversationMap.get(otherUserId);
-      if (!existingConv || new Date(msg.createdAt) > new Date(existingConv.lastMessage.createdAt)) {
+      if (!existingConv || (msg.createdAt && existingConv.lastMessage.createdAt && new Date(msg.createdAt) > new Date(existingConv.lastMessage.createdAt))) {
         const otherUser = allUsers.find(u => u.id === otherUserId) || null;
         const unreadCount = allMessages.filter(
           m => m.senderId === otherUserId && m.receiverId === user.id && !m.isRead
@@ -58,7 +58,11 @@ export default function Messages() {
     });
 
     return Array.from(conversationMap.values()).sort(
-      (a, b) => new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime()
+      (a, b) => {
+        const bTime = b.lastMessage.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
+        const aTime = a.lastMessage.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
+        return bTime - aTime;
+      }
     );
   }, [allMessages, allUsers, user]);
 
@@ -78,7 +82,11 @@ export default function Messages() {
         (msg.senderId === user.id && msg.receiverId === selectedUserId) ||
         (msg.receiverId === user.id && msg.senderId === selectedUserId)
       )
-      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      .sort((a, b) => {
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return aTime - bTime;
+      });
   }, [allMessages, selectedUserId, user]);
 
   const sendMessageMutation = useMutation({
@@ -129,19 +137,6 @@ export default function Messages() {
     );
   }
 
-  if (conversations.length === 0) {
-    return (
-      <div className="h-[calc(100vh-4rem)] flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-foreground mb-2">No conversations yet</h2>
-          <p className="text-muted-foreground">
-            Connect with other students to start messaging!
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="h-[calc(100vh-4rem)] bg-background">
       <div className="h-full max-w-7xl mx-auto">
@@ -160,63 +155,73 @@ export default function Messages() {
             </div>
 
             <div className="flex-1 overflow-y-auto">
-              {conversations.map((conv) => (
-                <button
-                  key={conv.otherUserId}
-                  onClick={() => setSelectedUserId(conv.otherUserId)}
-                  className={`w-full p-4 flex items-start gap-3 hover-elevate border-b ${
-                    selectedUserId === conv.otherUserId ? "bg-secondary" : ""
-                  }`}
-                  data-testid={`button-conversation-${conv.otherUserId}`}
-                >
-                  <Avatar className="h-12 w-12 flex-shrink-0">
-                    <AvatarImage 
-                      src={conv.otherUser?.profileImageUrl} 
-                      alt={`${conv.otherUser?.firstName} ${conv.otherUser?.lastName}`} 
-                    />
-                    <AvatarFallback>
-                      {conv.otherUser?.firstName && conv.otherUser?.lastName
-                        ? `${conv.otherUser.firstName[0]}${conv.otherUser.lastName[0]}`
-                        : "?"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0 text-left">
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-semibold text-foreground text-sm truncate">
-                        {conv.otherUser?.firstName && conv.otherUser?.lastName
-                          ? `${conv.otherUser.firstName} ${conv.otherUser.lastName}`
-                          : "Unknown User"}
-                      </h3>
-                      <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
-                        {formatDistanceToNow(new Date(conv.lastMessage.createdAt), {
-                          addSuffix: true,
-                        })}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-muted-foreground truncate">
-                        {conv.lastMessage.senderId === user.id ? "You: " : ""}
-                        {conv.lastMessage.content}
-                      </p>
-                      {conv.unreadCount > 0 && (
-                        <Badge className="ml-2 flex-shrink-0 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
-                          {conv.unreadCount}
-                        </Badge>
-                      )}
-                    </div>
+              {conversations.length === 0 ? (
+                <div className="flex items-center justify-center h-full p-4">
+                  <div className="text-center">
+                    <p className="text-muted-foreground text-sm">
+                      No conversations yet
+                    </p>
                   </div>
-                </button>
-              ))}
+                </div>
+              ) : (
+                conversations.map((conv) => (
+                  <button
+                    key={conv.otherUserId}
+                    onClick={() => setSelectedUserId(conv.otherUserId)}
+                    className={`w-full p-4 flex items-start gap-3 hover-elevate border-b ${
+                      selectedUserId === conv.otherUserId ? "bg-secondary" : ""
+                    }`}
+                    data-testid={`button-conversation-${conv.otherUserId}`}
+                  >
+                    <Avatar className="h-12 w-12 flex-shrink-0">
+                      <AvatarImage 
+                        src={conv.otherUser?.profileImageUrl || undefined} 
+                        alt={`${conv.otherUser?.firstName} ${conv.otherUser?.lastName}`} 
+                      />
+                      <AvatarFallback>
+                        {conv.otherUser?.firstName && conv.otherUser?.lastName
+                          ? `${conv.otherUser.firstName[0]}${conv.otherUser.lastName[0]}`
+                          : "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0 text-left">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-semibold text-foreground text-sm truncate">
+                          {conv.otherUser?.firstName && conv.otherUser?.lastName
+                            ? `${conv.otherUser.firstName} ${conv.otherUser.lastName}`
+                            : "Unknown User"}
+                        </h3>
+                        <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
+                          {conv.lastMessage.createdAt && formatDistanceToNow(new Date(conv.lastMessage.createdAt), {
+                            addSuffix: true,
+                          })}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground truncate">
+                          {conv.lastMessage.senderId === user.id ? "You: " : ""}
+                          {conv.lastMessage.content}
+                        </p>
+                        {conv.unreadCount > 0 && (
+                          <Badge className="ml-2 flex-shrink-0 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                            {conv.unreadCount}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                ))
+              )}
             </div>
           </aside>
 
-          {selectedConversation && (
+          {selectedConversation ? (
             <main className="flex-1 flex flex-col bg-background">
               <div className="p-4 border-b bg-card flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
                     <AvatarImage
-                      src={selectedConversation.otherUser?.profileImageUrl}
+                      src={selectedConversation.otherUser?.profileImageUrl || undefined}
                       alt={`${selectedConversation.otherUser?.firstName} ${selectedConversation.otherUser?.lastName}`}
                     />
                     <AvatarFallback>
@@ -261,7 +266,7 @@ export default function Messages() {
                           <p className="text-sm">{message.content}</p>
                         </div>
                         <span className="text-xs text-muted-foreground mt-1">
-                          {format(new Date(message.createdAt), "h:mm a")}
+                          {message.createdAt && format(new Date(message.createdAt), "h:mm a")}
                         </span>
                       </div>
                     </div>
@@ -288,6 +293,15 @@ export default function Messages() {
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
+              </div>
+            </main>
+          ) : (
+            <main className="flex-1 flex items-center justify-center bg-background">
+              <div className="text-center">
+                <h2 className="text-xl font-semibold text-foreground mb-2">No conversations yet</h2>
+                <p className="text-muted-foreground">
+                  Connect with other students to start messaging!
+                </p>
               </div>
             </main>
           )}
