@@ -163,36 +163,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      <section className="py-20 bg-primary text-primary-foreground">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Ready to Start Your Journey?
-          </h2>
-          <p className="text-lg mb-8 text-primary-foreground/90">
-            Join hundreds of University of Rochester students building the future
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Button 
-              size="lg" 
-              variant="secondary"
-              data-testid="button-create-profile"
-              onClick={() => setLocation("/team-matching")}
-            >
-              Create Your Profile
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline"
-              className="border-primary-foreground/40 text-primary-foreground hover:bg-primary-foreground/10"
-              data-testid="button-browse-opportunities"
-              onClick={() => setLocation("/project-gigs")}
-            >
-              Browse Opportunities
-            </Button>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
