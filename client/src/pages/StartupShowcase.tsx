@@ -50,7 +50,19 @@ export default function StartupShowcase() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [uploadedImagePath, setUploadedImagePath] = useState<string>("");
   const [uploadedImagePreview, setUploadedImagePreview] = useState<string>("");
+  const [customCategory, setCustomCategory] = useState("");
   const { toast } = useToast();
+
+  // Reset form and state when dialog closes
+  const handleDialogChange = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      form.reset();
+      setUploadedImagePath("");
+      setUploadedImagePreview("");
+      setCustomCategory("");
+    }
+  };
 
   const {
     data,
@@ -99,14 +111,11 @@ export default function StartupShowcase() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/startups"] });
-      setIsDialogOpen(false);
       toast({
         title: "Startup submitted!",
         description: "Your startup has been submitted for admin approval.",
       });
-      form.reset();
-      setUploadedImagePath("");
-      setUploadedImagePreview("");
+      handleDialogChange(false);
     },
     onError: () => {
       toast({
@@ -132,11 +141,30 @@ export default function StartupShowcase() {
   });
 
   const onSubmit = (data: InsertStartup) => {
-    const submitData = {
-      ...data,
-      imagePath: uploadedImagePath || undefined,
-    };
-    createStartupMutation.mutate(submitData);
+    // Validate custom category if "Other" is selected
+    if (data.category === "Other") {
+      if (!customCategory.trim()) {
+        form.setError("category", {
+          type: "manual",
+          message: "Please specify a custom category",
+        });
+        return;
+      }
+      // Use custom category value
+      const submitData = {
+        ...data,
+        category: customCategory,
+        imagePath: uploadedImagePath || undefined,
+      };
+      createStartupMutation.mutate(submitData);
+    } else {
+      // Use selected category
+      const submitData = {
+        ...data,
+        imagePath: uploadedImagePath || undefined,
+      };
+      createStartupMutation.mutate(submitData);
+    }
   };
 
   const handleGetUploadParameters = async () => {
@@ -200,7 +228,7 @@ export default function StartupShowcase() {
                 Discover innovative startups built by Rochester students
               </p>
             </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
               <DialogTrigger asChild>
                 <Button data-testid="button-submit-startup">
                   <Plus className="h-4 w-4 mr-2" />
@@ -261,13 +289,43 @@ export default function StartupShowcase() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Category</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="e.g., EdTech, FinTech, HealthTech" data-testid="input-category" />
-                          </FormControl>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-startup-category">
+                                <SelectValue placeholder="Select a category" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="EdTech">EdTech</SelectItem>
+                              <SelectItem value="FinTech">FinTech</SelectItem>
+                              <SelectItem value="HealthTech">HealthTech</SelectItem>
+                              <SelectItem value="AI/ML">AI/ML</SelectItem>
+                              <SelectItem value="Data & Analytics">Data & Analytics</SelectItem>
+                              <SelectItem value="Consumer App">Consumer App</SelectItem>
+                              <SelectItem value="B2B SaaS">B2B SaaS</SelectItem>
+                              <SelectItem value="Social Impact">Social Impact</SelectItem>
+                              <SelectItem value="Sustainability">Sustainability</SelectItem>
+                              <SelectItem value="Robotics">Robotics</SelectItem>
+                              <SelectItem value="Hardware">Hardware</SelectItem>
+                              <SelectItem value="Media & Creator">Media & Creator</SelectItem>
+                              <SelectItem value="Other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    {form.watch("category") === "Other" && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">Specify Category</label>
+                        <Input 
+                          value={customCategory}
+                          onChange={(e) => setCustomCategory(e.target.value)}
+                          placeholder="Enter custom category"
+                          data-testid="input-custom-category"
+                        />
+                      </div>
+                    )}
                     <FormField
                       control={form.control}
                       name="teamSize"
@@ -368,12 +426,17 @@ export default function StartupShowcase() {
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
                 <SelectItem value="EdTech">EdTech</SelectItem>
-                <SelectItem value="Food & Delivery">Food & Delivery</SelectItem>
-                <SelectItem value="Sustainability">Sustainability</SelectItem>
-                <SelectItem value="Social">Social</SelectItem>
-                <SelectItem value="Career">Career</SelectItem>
                 <SelectItem value="FinTech">FinTech</SelectItem>
                 <SelectItem value="HealthTech">HealthTech</SelectItem>
+                <SelectItem value="AI/ML">AI/ML</SelectItem>
+                <SelectItem value="Data & Analytics">Data & Analytics</SelectItem>
+                <SelectItem value="Consumer App">Consumer App</SelectItem>
+                <SelectItem value="B2B SaaS">B2B SaaS</SelectItem>
+                <SelectItem value="Social Impact">Social Impact</SelectItem>
+                <SelectItem value="Sustainability">Sustainability</SelectItem>
+                <SelectItem value="Robotics">Robotics</SelectItem>
+                <SelectItem value="Hardware">Hardware</SelectItem>
+                <SelectItem value="Media & Creator">Media & Creator</SelectItem>
               </SelectContent>
             </Select>
           </div>

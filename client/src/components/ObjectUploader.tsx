@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -76,6 +77,9 @@ export function ObjectUploader({
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Upload Image</DialogTitle>
+            <DialogDescription>
+              Select an image file to upload (max 5MB)
+            </DialogDescription>
           </DialogHeader>
           <div id="uppy-dashboard" className="min-h-[400px]"></div>
         </DialogContent>

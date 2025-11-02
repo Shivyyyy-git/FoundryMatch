@@ -131,6 +131,12 @@ export const insertStartupSchema = createInsertSchema(startups).omit({
   createdAt: true,
   userId: true,
   isApproved: true,
+}).extend({
+  name: z.string().min(1, "Startup name is required"),
+  tagline: z.string().min(1, "Tagline is required"),
+  description: z.string().min(1, "Description is required"),
+  category: z.string().min(1, "Category is required"),
+  teamSize: z.number().min(1, "Team size must be at least 1"),
 });
 export type InsertStartup = z.infer<typeof insertStartupSchema>;
 export type Startup = typeof startups.$inferSelect;
