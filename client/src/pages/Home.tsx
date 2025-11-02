@@ -6,6 +6,7 @@ import { ArrowRight, Users, Briefcase, Rocket } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import showcaseImage from "@assets/generated_images/Startup_showcase_image_1_6effd381.png";
 import teamImage from "@assets/generated_images/Startup_team_photo_cb2f6363.png";
+import ainCenterLogo from "@assets/AinCenter_NewLogoIdea1_1749662612625-DhO7ZuVk_1762095421722.png";
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -193,6 +194,23 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <footer className="py-10 text-center" style={{ backgroundColor: '#fafafa' }}>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <img 
+            src={ainCenterLogo} 
+            alt="Ain Center for Entrepreneurship and Innovation" 
+            className="h-20 mx-auto mb-6"
+            data-testid="img-ain-center-logo"
+          />
+          <p className="text-base mb-2" style={{ color: '#1f242e' }} data-testid="text-powered-by">
+            Powered by the Ain Center for Entrepreneurship and Innovation
+          </p>
+          <p className="text-sm" style={{ color: '#1f242e' }} data-testid="text-copyright">
+            © 2024 Foundry StartupMatch. All rights reserved.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
