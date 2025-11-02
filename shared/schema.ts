@@ -30,6 +30,9 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  userType: varchar("user_type").default("Student"),
+  organization: varchar("organization"),
+  headline: text("headline"),
   major: varchar("major"),
   year: varchar("year"),
   bio: text("bio"),
@@ -42,6 +45,7 @@ export const users = pgTable("users", {
   index("idx_users_major_year_availability").on(table.major, table.year, table.availability),
   index("idx_users_skills").using("gin", table.skills),
   index("idx_users_created_at").on(table.createdAt),
+  index("idx_users_user_type").on(table.userType),
 ]);
 
 export type UpsertUser = typeof users.$inferInsert;
@@ -50,6 +54,9 @@ export type User = typeof users.$inferSelect;
 // Profile update schema with validation - require non-empty, non-whitespace strings for academic fields
 export const updateProfileSchema = z.object({
   bio: z.string().optional(),
+  userType: z.string().optional(),
+  organization: z.string().optional(),
+  headline: z.string().optional(),
   major: z.string()
     .min(1, "Major cannot be empty")
     .refine((val) => val.trim().length > 0, { message: "Major cannot be whitespace" })
