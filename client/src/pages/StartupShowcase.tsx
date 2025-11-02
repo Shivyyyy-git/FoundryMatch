@@ -26,7 +26,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Startup, InsertStartup } from "@shared/schema";
@@ -35,6 +35,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertStartupSchema } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { ObjectUploader } from "@/components/ObjectUploader";
+import type { UploadResult } from "@uppy/core";
 
 interface PaginatedResponse {
   data: Startup[];
@@ -46,6 +48,8 @@ export default function StartupShowcase() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [uploadedImagePath, setUploadedImagePath] = useState<string>("");
+  const [uploadedImagePreview, setUploadedImagePreview] = useState<string>("");
   const { toast } = useToast();
 
   const {
@@ -101,6 +105,8 @@ export default function StartupShowcase() {
         description: "Your startup has been submitted for admin approval.",
       });
       form.reset();
+      setUploadedImagePath("");
+      setUploadedImagePreview("");
     },
     onError: () => {
       toast({
@@ -120,12 +126,55 @@ export default function StartupShowcase() {
       category: "",
       teamSize: 1,
       founded: "",
-      imageUrl: "",
+      imagePath: "",
+      externalUrl: "",
     },
   });
 
   const onSubmit = (data: InsertStartup) => {
-    createStartupMutation.mutate(data);
+    const submitData = {
+      ...data,
+      imagePath: uploadedImagePath || undefined,
+    };
+    createStartupMutation.mutate(submitData);
+  };
+
+  const handleGetUploadParameters = async () => {
+    const res = await fetch("/api/objects/upload", {
+      method: "POST",
+      credentials: "include",
+    });
+    const { uploadURL } = await res.json();
+    return {
+      method: "PUT" as const,
+      url: uploadURL,
+    };
+  };
+
+  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+    if (result.successful && result.successful.length > 0) {
+      const uploadURL = result.successful[0].uploadURL;
+      if (uploadURL) {
+        try {
+          const res = await apiRequest("PUT", "/api/startup-images", {
+            imageURL: uploadURL,
+          });
+          const data = await res.json();
+          setUploadedImagePath(data.objectPath);
+          setUploadedImagePreview(uploadURL);
+          toast({
+            title: "Image uploaded!",
+            description: "Your startup logo has been uploaded successfully.",
+          });
+        } catch (error) {
+          toast({
+            title: "Error",
+            description: "Failed to save image. Please try again.",
+            variant: "destructive",
+          });
+        }
+      }
+    }
   };
 
   const filteredStartups = startups.filter(startup =>
@@ -252,17 +301,49 @@ export default function StartupShowcase() {
                     />
                     <FormField
                       control={form.control}
-                      name="imageUrl"
+                      name="externalUrl"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Image URL (optional)</FormLabel>
+                          <FormLabel>Website or LinkedIn URL (optional)</FormLabel>
                           <FormControl>
-                            <Input {...field} value={field.value || ""} placeholder="https://..." data-testid="input-image-url" />
+                            <Input 
+                              {...field} 
+                              value={field.value || ""} 
+                              type="url"
+                              placeholder="https://example.com or https://linkedin.com/..." 
+                              data-testid="input-external-url" 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Startup Image / Logo (optional)</label>
+                      <ObjectUploader
+                        maxNumberOfFiles={1}
+                        maxFileSize={5242880}
+                        onGetUploadParameters={handleGetUploadParameters}
+                        onComplete={handleUploadComplete}
+                        buttonClassName="w-full"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Upload className="h-4 w-4" />
+                          <span>Upload Logo</span>
+                        </div>
+                      </ObjectUploader>
+                      {uploadedImagePreview && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <img 
+                            src={uploadedImagePreview} 
+                            alt="Preview" 
+                            className="h-16 w-16 object-cover rounded border"
+                            data-testid="img-upload-preview"
+                          />
+                          <p className="text-sm text-muted-foreground">Logo uploaded successfully</p>
+                        </div>
+                      )}
+                    </div>
                     <Button type="submit" disabled={createStartupMutation.isPending} data-testid="button-submit-startup-form">
                       {createStartupMutation.isPending ? "Submitting..." : "Submit Startup"}
                     </Button>
