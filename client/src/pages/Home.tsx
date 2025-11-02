@@ -14,6 +14,36 @@ export default function Home() {
     <div className="min-h-screen">
       <Hero />
       
+      <section className="py-20 text-center" style={{ backgroundColor: '#1f3b8a' }}>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4" data-testid="text-cta-heading">
+            Ready to start your journey?
+          </h2>
+          <p className="text-lg md:text-xl text-white/90 mb-8" data-testid="text-cta-description">
+            Join the University of Rochester entrepreneurial community building the future together.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Button 
+              size="lg" 
+              className="bg-white text-[#1f3b8a] hover:bg-white/90"
+              data-testid="button-create-profile-cta"
+              onClick={() => setLocation("/profile")}
+            >
+              Create Profile
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline"
+              className="border-2 border-white text-white bg-transparent hover:bg-white/10"
+              data-testid="button-browse-opportunities-cta"
+              onClick={() => setLocation("/project-gigs")}
+            >
+              Browse Opportunities
+            </Button>
+          </div>
+        </div>
+      </section>
+      
       <section className="py-16 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
