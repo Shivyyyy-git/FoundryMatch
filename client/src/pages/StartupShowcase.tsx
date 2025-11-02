@@ -402,7 +402,8 @@ export default function StartupShowcase() {
                 category={startup.category}
                 teamSize={startup.teamSize}
                 founded={startup.founded || undefined}
-                image={startup.imageUrl || undefined}
+                image={startup.imagePath || undefined}
+                externalUrl={startup.externalUrl || undefined}
               />
             ))}
           </div>

@@ -11,6 +11,7 @@ interface StartupCardProps {
   teamSize: number;
   image?: string;
   founded?: string;
+  externalUrl?: string;
 }
 
 export function StartupCard({
@@ -20,7 +21,8 @@ export function StartupCard({
   category,
   teamSize,
   image,
-  founded = "2024"
+  founded = "2024",
+  externalUrl
 }: StartupCardProps) {
   return (
     <Card className="overflow-hidden hover-elevate" data-testid={`card-startup-${name.toLowerCase().replace(/\s+/g, '-')}`}>
@@ -76,14 +78,17 @@ export function StartupCard({
           >
             Learn More
           </Button>
-          <Button 
-            size="sm" 
-            className="flex-1"
-            data-testid="button-visit"
-          >
-            <ExternalLink className="h-4 w-4 mr-1" />
-            Visit
-          </Button>
+          {externalUrl && (
+            <Button 
+              size="sm" 
+              className="flex-1"
+              onClick={() => window.open(externalUrl, '_blank')}
+              data-testid="button-visit"
+            >
+              <ExternalLink className="h-4 w-4 mr-1" />
+              Visit
+            </Button>
+          )}
         </div>
       </div>
     </Card>
