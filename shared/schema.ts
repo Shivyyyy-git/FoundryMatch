@@ -78,6 +78,7 @@ export const projects = pgTable("projects", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: varchar("title").notNull(),
   company: varchar("company").notNull(),
+  projectLink: varchar("project_link"),
   description: text("description").notNull(),
   skills: text("skills").array().notNull(),
   timeCommitment: varchar("time_commitment"),

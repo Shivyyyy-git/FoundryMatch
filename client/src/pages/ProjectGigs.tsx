@@ -116,6 +116,7 @@ export default function ProjectGigs() {
     defaultValues: {
       title: "",
       company: "",
+      projectLink: "",
       description: "",
       skills: [],
       timeCommitment: "",
@@ -256,6 +257,25 @@ export default function ProjectGigs() {
                     />
                     <FormField
                       control={form.control}
+                      name="projectLink"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Project or Company Link</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              value={field.value || ""} 
+                              type="url"
+                              placeholder="https://example.com"
+                              data-testid="input-project-link" 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
                       name="description"
                       render={({ field }) => (
                         <FormItem>
@@ -276,7 +296,7 @@ export default function ProjectGigs() {
                           <FormControl>
                             <Input
                               {...field}
-                              value={field.value?.join(", ") || ""}
+                              value={Array.isArray(field.value) ? field.value.join(", ") : ""}
                               onChange={(e) => field.onChange(e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
                               placeholder="React, TypeScript, Node.js"
                               data-testid="input-skills"
