@@ -35,8 +35,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertStartupSchema } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { ObjectUploader } from "@/components/ObjectUploader";
-import type { UploadResult } from "@uppy/core";
 
 interface PaginatedResponse {
   data: Startup[];
@@ -51,6 +49,9 @@ export default function StartupShowcase() {
   const [uploadedImagePath, setUploadedImagePath] = useState<string>("");
   const [uploadedImagePreview, setUploadedImagePreview] = useState<string>("");
   const [customCategory, setCustomCategory] = useState("");
+  const [selectedFileName, setSelectedFileName] = useState<string>("");
+  const [fileUploadError, setFileUploadError] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
   // Reset form and state when dialog closes
@@ -61,6 +62,8 @@ export default function StartupShowcase() {
       setUploadedImagePath("");
       setUploadedImagePreview("");
       setCustomCategory("");
+      setSelectedFileName("");
+      setFileUploadError("");
     }
   };
 
@@ -167,41 +170,85 @@ export default function StartupShowcase() {
     }
   };
 
-  const handleGetUploadParameters = async () => {
-    const res = await fetch("/api/objects/upload", {
-      method: "POST",
-      credentials: "include",
-    });
-    const { uploadURL } = await res.json();
-    return {
-      method: "PUT" as const,
-      url: uploadURL,
-    };
-  };
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
-    if (result.successful && result.successful.length > 0) {
-      const uploadURL = result.successful[0].uploadURL;
-      if (uploadURL) {
-        try {
-          const res = await apiRequest("PUT", "/api/startup-images", {
-            imageURL: uploadURL,
-          });
-          const data = await res.json();
-          setUploadedImagePath(data.objectPath);
-          setUploadedImagePreview(uploadURL);
-          toast({
-            title: "Image uploaded!",
-            description: "Your startup logo has been uploaded successfully.",
-          });
-        } catch (error) {
-          toast({
-            title: "Error",
-            description: "Failed to save image. Please try again.",
-            variant: "destructive",
-          });
-        }
+    // Reset errors
+    setFileUploadError("");
+
+    // Validate file type
+    const validTypes = ["image/png", "image/jpeg", "image/jpg"];
+    if (!validTypes.includes(file.type)) {
+      setFileUploadError("Please select a PNG or JPG image file.");
+      event.target.value = ""; // Reset input so user can retry
+      return;
+    }
+
+    // Validate file size (5MB max)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > maxSize) {
+      setFileUploadError("File too large, please select a smaller image (max 5MB).");
+      event.target.value = ""; // Reset input so user can retry
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      setSelectedFileName(file.name);
+
+      // Get presigned upload URL
+      const uploadRes = await fetch("/api/objects/upload", {
+        method: "POST",
+        credentials: "include",
+      });
+      const { uploadURL } = await uploadRes.json();
+
+      // Upload file to object storage
+      const uploadResponse = await fetch(uploadURL, {
+        method: "PUT",
+        body: file,
+        headers: {
+          "Content-Type": file.type,
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload file");
       }
+
+      // Save image path to backend
+      const saveRes = await apiRequest("PUT", "/api/startup-images", {
+        imageURL: uploadURL,
+      });
+      const data = await saveRes.json();
+
+      // Create preview from file
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadedImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      setUploadedImagePath(data.objectPath);
+      
+      toast({
+        title: "Image uploaded!",
+        description: "Your startup logo has been uploaded successfully.",
+      });
+    } catch (error) {
+      // Clear preview and filename on error
+      setSelectedFileName("");
+      setUploadedImagePreview("");
+      setFileUploadError("Failed to upload image. Please try again.");
+      toast({
+        title: "Error",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      event.target.value = ""; // Always reset input for retry capability
     }
   };
 
@@ -378,27 +425,48 @@ export default function StartupShowcase() {
                     />
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Startup Image / Logo (optional)</label>
-                      <ObjectUploader
-                        maxNumberOfFiles={1}
-                        maxFileSize={5242880}
-                        onGetUploadParameters={handleGetUploadParameters}
-                        onComplete={handleUploadComplete}
-                        buttonClassName="w-full"
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        id="logo-upload"
+                        data-testid="input-file-upload"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => document.getElementById('logo-upload')?.click()}
+                        disabled={isUploading}
+                        data-testid="button-upload-logo"
                       >
-                        <div className="flex items-center gap-2">
-                          <Upload className="h-4 w-4" />
-                          <span>Upload Logo</span>
-                        </div>
-                      </ObjectUploader>
-                      {uploadedImagePreview && (
-                        <div className="mt-2 flex items-center gap-2">
-                          <img 
-                            src={uploadedImagePreview} 
-                            alt="Preview" 
-                            className="h-16 w-16 object-cover rounded border"
-                            data-testid="img-upload-preview"
-                          />
-                          <p className="text-sm text-muted-foreground">Logo uploaded successfully</p>
+                        <Upload className="h-4 w-4 mr-2" />
+                        {isUploading ? "Uploading..." : "Upload Logo"}
+                      </Button>
+                      {fileUploadError && (
+                        <p className="text-sm text-destructive" data-testid="text-file-error">
+                          {fileUploadError}
+                        </p>
+                      )}
+                      {uploadedImagePreview && !fileUploadError && (
+                        <div className="mt-2 space-y-2">
+                          <div className="flex items-center gap-3">
+                            <img 
+                              src={uploadedImagePreview} 
+                              alt="Preview" 
+                              className="h-16 w-16 object-cover rounded border"
+                              data-testid="img-upload-preview"
+                            />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium" data-testid="text-filename">
+                                {selectedFileName}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Logo uploaded successfully
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
