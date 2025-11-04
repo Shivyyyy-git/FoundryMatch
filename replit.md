@@ -6,9 +6,19 @@ MatchMeUp Foundry is a university-based networking platform designed for the Uni
 
 The application follows a full-stack architecture with React on the frontend, Express on the backend, and PostgreSQL for data persistence. Authentication is handled through Replit's OIDC integration (supporting Google login and other providers), and the UI is built using shadcn/ui components with a custom University of Rochester brand theme.
 
-## Recent Changes (October 28, 2025)
+## Recent Changes (November 4, 2025)
 
 **Production-Ready Features (Latest):**
+- **Native File Upload System:**
+  - Replaced Uppy-based ObjectUploader with native HTML file input for startup logos
+  - Opens system file picker directly when "Upload Logo" button clicked (LinkedIn/Notion-style UX)
+  - File validation: PNG/JPG only, 5MB max size with inline error messages
+  - Preview thumbnail (64x64) and filename display after successful upload
+  - Automatic input reset after each attempt to allow retrying same file after failures
+  - FileReader API for client-side preview generation
+  - Upload flow: get presigned URL → PUT to object storage → save path via /api/startup-images
+  - State management: tracks upload status, preview, filename, and validation errors
+  - Clean state reset when dialog closes
 - **Database Performance Optimization:**
   - Added indexes on frequently queried fields: `projects.skills`, `projects.is_approved`, `users.major`, `users.year`, `users.availability`, and timestamp fields
   - Optimized queries for 3,000+ student user base
