@@ -7,8 +7,9 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogClose,
 } from "@/components/ui/dialog";
-import { Users, Briefcase, Rocket, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Users, Briefcase, Rocket, ArrowRight, CheckCircle2, X } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 
 export default function Landing() {
@@ -165,6 +166,10 @@ export default function Landing() {
       {/* Signup Modal */}
       <Dialog open={showSignupModal} onOpenChange={setShowSignupModal}>
         <DialogContent className="sm:max-w-md" data-testid="dialog-signup">
+          <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground" data-testid="button-close-modal">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </DialogClose>
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-center">
               Join MatchMeUp Foundry
