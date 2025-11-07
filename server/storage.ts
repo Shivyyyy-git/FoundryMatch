@@ -24,8 +24,6 @@ export interface PaginatedResult<T> {
 export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;
-  createUserWithPassword(email: string, password: string, firstName?: string, lastName?: string): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUserProfile(id: string, data: Partial<User>): Promise<User>;
   getAllUsers(limit?: number, offset?: number): Promise<PaginatedResult<User>>;
@@ -62,29 +60,6 @@ export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
-  }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
-  }
-
-  async createUserWithPassword(email: string, password: string, firstName?: string, lastName?: string): Promise<User> {
-    // Check if email already exists
-    const existingUser = await this.getUserByEmail(email);
-    if (existingUser) {
-      throw new Error("Email already registered");
-    }
-
-    // Create new user with password
-    const [user] = await db.insert(users).values({
-      email,
-      password,
-      firstName,
-      lastName,
-    }).returning();
-    
     return user;
   }
 
