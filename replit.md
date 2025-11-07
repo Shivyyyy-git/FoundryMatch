@@ -8,7 +8,7 @@ MatchMeUp Foundry is a university-based networking platform for the University o
 
 - Preferred communication style: Simple, everyday language
 - Design choice: Client-side filtering acceptable for MVP at 3k user scale; would need server-side filtering if data grows 10x
-- Validation requirement: Profile updates reject empty strings and whitespace-only values for major/year/availability (required academic metadata)
+- Validation requirement: Profile updates accept empty strings to clear role-specific fields (major/year/availability) when switching roles, but reject whitespace-only values for required fields
 - Testing requirement: All interactive elements (links, buttons) must have unique data-testid attributes for E2E testing
 
 ## System Architecture
