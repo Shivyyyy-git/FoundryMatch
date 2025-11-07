@@ -38,6 +38,17 @@ export const users = pgTable("users", {
   bio: text("bio"),
   skills: text("skills").array(),
   availability: varchar("availability"),
+  // Company fields
+  website: varchar("website"),
+  collaborationInterests: text("collaboration_interests"),
+  // Professor fields
+  researchArea: text("research_area"),
+  mentorshipInterests: text("mentorship_interests"),
+  // Student with Startup fields
+  startupName: varchar("startup_name"),
+  startupStage: varchar("startup_stage"),
+  teamSize: integer("team_size"),
+  collaborationNeeds: text("collaboration_needs"),
   isAdmin: boolean("is_admin").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -73,6 +84,17 @@ export const updateProfileSchema = z.object({
     })
     .optional(),
   skills: z.array(z.string()).optional(),
+  // Company fields
+  website: z.string().optional(),
+  collaborationInterests: z.string().optional(),
+  // Professor fields
+  researchArea: z.string().optional(),
+  mentorshipInterests: z.string().optional(),
+  // Student with Startup fields
+  startupName: z.string().optional(),
+  startupStage: z.string().optional(),
+  teamSize: z.number().optional(),
+  collaborationNeeds: z.string().optional(),
 });
 export type UpdateProfile = z.infer<typeof updateProfileSchema>;
 

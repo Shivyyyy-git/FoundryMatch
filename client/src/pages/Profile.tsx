@@ -38,6 +38,14 @@ export default function Profile() {
     year: string;
     availability: string;
     skills: string[];
+    website: string;
+    collaborationInterests: string;
+    researchArea: string;
+    mentorshipInterests: string;
+    startupName: string;
+    startupStage: string;
+    teamSize: string;
+    collaborationNeeds: string;
   }>({
     userType: "",
     organization: "",
@@ -46,6 +54,14 @@ export default function Profile() {
     year: "",
     availability: "",
     skills: [],
+    website: "",
+    collaborationInterests: "",
+    researchArea: "",
+    mentorshipInterests: "",
+    startupName: "",
+    startupStage: "",
+    teamSize: "",
+    collaborationNeeds: "",
   });
 
   // Update form data when user data loads
@@ -59,6 +75,14 @@ export default function Profile() {
         year: user.year || "",
         availability: user.availability || "",
         skills: user.skills || [],
+        website: user.website || "",
+        collaborationInterests: user.collaborationInterests || "",
+        researchArea: user.researchArea || "",
+        mentorshipInterests: user.mentorshipInterests || "",
+        startupName: user.startupName || "",
+        startupStage: user.startupStage || "",
+        teamSize: user.teamSize?.toString() || "",
+        collaborationNeeds: user.collaborationNeeds || "",
       });
     }
   }, [user]);
@@ -101,29 +125,79 @@ export default function Profile() {
     
     // Role-specific fields
     if (formData.userType === "Company") {
-      // Company: organization only, clear student/professor fields with empty strings
+      // Company: organization, website, collaboration interests
       cleanedData.organization = formData.organization?.trim() || "";
+      cleanedData.website = formData.website?.trim() || "";
+      cleanedData.collaborationInterests = formData.collaborationInterests?.trim() || "";
+      // Clear student/professor/startup fields
       cleanedData.major = "";
       cleanedData.year = "";
       cleanedData.availability = "";
-    } else if (formData.userType === "University Student" || formData.userType === "Student in Rochester") {
-      // Students: major, year, availability, clear organization with empty string
-      cleanedData.organization = "";
+      cleanedData.researchArea = "";
+      cleanedData.mentorshipInterests = "";
+      cleanedData.startupName = "";
+      cleanedData.startupStage = "";
+      cleanedData.teamSize = undefined;
+      cleanedData.collaborationNeeds = "";
+    } else if (formData.userType === "University Student") {
+      // University Student: major, year, availability, skills
       cleanedData.major = formData.major?.trim() || undefined;
       cleanedData.year = formData.year?.trim() || undefined;
       cleanedData.availability = formData.availability?.trim() || undefined;
-    } else if (formData.userType === "Professor") {
-      // Professor: major (as department), clear year/availability/organization with empty strings
+      // Clear company/professor/startup fields
       cleanedData.organization = "";
+      cleanedData.website = "";
+      cleanedData.collaborationInterests = "";
+      cleanedData.researchArea = "";
+      cleanedData.mentorshipInterests = "";
+      cleanedData.startupName = "";
+      cleanedData.startupStage = "";
+      cleanedData.teamSize = undefined;
+      cleanedData.collaborationNeeds = "";
+    } else if (formData.userType === "Student in Rochester") {
+      // Student in Rochester (with startup): major, year, availability, startup fields
       cleanedData.major = formData.major?.trim() || undefined;
+      cleanedData.year = formData.year?.trim() || undefined;
+      cleanedData.availability = formData.availability?.trim() || undefined;
+      cleanedData.startupName = formData.startupName?.trim() || "";
+      cleanedData.startupStage = formData.startupStage?.trim() || "";
+      cleanedData.teamSize = formData.teamSize ? parseInt(formData.teamSize) : undefined;
+      cleanedData.collaborationNeeds = formData.collaborationNeeds?.trim() || "";
+      // Clear company/professor fields
+      cleanedData.organization = "";
+      cleanedData.website = "";
+      cleanedData.collaborationInterests = "";
+      cleanedData.researchArea = "";
+      cleanedData.mentorshipInterests = "";
+    } else if (formData.userType === "Professor") {
+      // Professor: department (major), research area, mentorship interests
+      cleanedData.major = formData.major?.trim() || undefined;
+      cleanedData.researchArea = formData.researchArea?.trim() || "";
+      cleanedData.mentorshipInterests = formData.mentorshipInterests?.trim() || "";
+      // Clear student/company/startup fields
+      cleanedData.organization = "";
+      cleanedData.website = "";
+      cleanedData.collaborationInterests = "";
       cleanedData.year = "";
       cleanedData.availability = "";
+      cleanedData.startupName = "";
+      cleanedData.startupStage = "";
+      cleanedData.teamSize = undefined;
+      cleanedData.collaborationNeeds = "";
     } else {
       // Default: clear all role-specific fields with empty strings
       cleanedData.organization = "";
+      cleanedData.website = "";
+      cleanedData.collaborationInterests = "";
       cleanedData.major = "";
       cleanedData.year = "";
       cleanedData.availability = "";
+      cleanedData.researchArea = "";
+      cleanedData.mentorshipInterests = "";
+      cleanedData.startupName = "";
+      cleanedData.startupStage = "";
+      cleanedData.teamSize = undefined;
+      cleanedData.collaborationNeeds = "";
     }
     
     // Remove undefined fields (keep empty strings to clear database values)
@@ -345,59 +419,39 @@ export default function Profile() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="bio">About Your Organization</Label>
+                      <Label htmlFor="website">Website</Label>
+                      <Input
+                        id="website"
+                        type="url"
+                        placeholder="https://yourcompany.com"
+                        value={formData.website}
+                        onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                        data-testid="input-website"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="collaborationInterests">Collaboration Interests</Label>
+                      <Textarea
+                        id="collaborationInterests"
+                        placeholder="What kind of collaborations are you interested in? (e.g., research partnerships, internships, project collaborations)"
+                        value={formData.collaborationInterests}
+                        onChange={(e) => setFormData({ ...formData, collaborationInterests: e.target.value })}
+                        className="min-h-24"
+                        data-testid="textarea-collaboration-interests"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="bio">Bio</Label>
                       <Textarea
                         id="bio"
-                        placeholder="Tell us about your company, your mission, and what kind of collaborations you're interested in..."
+                        placeholder="Tell us about your company and its mission..."
                         value={formData.bio}
                         onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                         className="min-h-32"
                         data-testid="textarea-bio"
                       />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="skills">Areas of Expertise</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="skills"
-                          placeholder="Add expertise areas (e.g., AI/ML, FinTech, Healthcare)"
-                          value={skillInput}
-                          onChange={(e) => setSkillInput(e.target.value)}
-                          onKeyPress={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              addSkill();
-                            }
-                          }}
-                          data-testid="input-skill"
-                        />
-                        <Button
-                          type="button"
-                          onClick={addSkill}
-                          variant="outline"
-                          data-testid="button-add-skill"
-                        >
-                          Add
-                        </Button>
-                      </div>
-                      {formData.skills.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {formData.skills.map((skill) => (
-                            <Badge key={skill} variant="secondary" className="gap-1" data-testid={`badge-skill-${skill}`}>
-                              {skill}
-                              <button
-                                type="button"
-                                onClick={() => removeSkill(skill)}
-                                className="hover-elevate active-elevate-2 rounded-full p-0.5"
-                                data-testid={`button-remove-skill-${skill}`}
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   </div>
                 )}
@@ -532,85 +586,49 @@ export default function Profile() {
                 {formData.userType === "Professor" && (
                   <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-500">
                     <div className="space-y-2">
+                      <Label htmlFor="major">Department</Label>
+                      <Input
+                        id="major"
+                        placeholder="e.g., Computer Science, Engineering, Biology"
+                        value={formData.major}
+                        onChange={(e) => setFormData({ ...formData, major: e.target.value })}
+                        data-testid="input-department"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="researchArea">Research Area</Label>
+                      <Input
+                        id="researchArea"
+                        placeholder="e.g., Machine Learning, Quantum Computing, Molecular Biology"
+                        value={formData.researchArea}
+                        onChange={(e) => setFormData({ ...formData, researchArea: e.target.value })}
+                        data-testid="input-research-area"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="mentorshipInterests">Mentorship Interests</Label>
+                      <Textarea
+                        id="mentorshipInterests"
+                        placeholder="What kind of student projects or research areas would you like to mentor? What can students collaborate with you on?"
+                        value={formData.mentorshipInterests}
+                        onChange={(e) => setFormData({ ...formData, mentorshipInterests: e.target.value })}
+                        className="min-h-24"
+                        data-testid="textarea-mentorship-interests"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
                       <Label htmlFor="bio">Bio</Label>
                       <Textarea
                         id="bio"
-                        placeholder="Tell us about your research interests, teaching focus, and how you'd like to collaborate with students..."
+                        placeholder="Tell us about your teaching focus, research interests, and background..."
                         value={formData.bio}
                         onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                         className="min-h-32"
                         data-testid="textarea-bio"
                       />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="major">Department / Area of Expertise</Label>
-                      <Select
-                        value={formData.major}
-                        onValueChange={(value) => setFormData({ ...formData, major: value })}
-                      >
-                        <SelectTrigger id="major" data-testid="select-major">
-                          <SelectValue placeholder="Select your department" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Computer Science">Computer Science</SelectItem>
-                          <SelectItem value="Engineering">Engineering</SelectItem>
-                          <SelectItem value="Business">Business</SelectItem>
-                          <SelectItem value="Design">Design</SelectItem>
-                          <SelectItem value="Data Science">Data Science</SelectItem>
-                          <SelectItem value="Mathematics">Mathematics</SelectItem>
-                          <SelectItem value="Economics">Economics</SelectItem>
-                          <SelectItem value="Biology">Biology</SelectItem>
-                          <SelectItem value="Chemistry">Chemistry</SelectItem>
-                          <SelectItem value="Physics">Physics</SelectItem>
-                          <SelectItem value="Psychology">Psychology</SelectItem>
-                          <SelectItem value="Other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="skills">Research Areas & Skills</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="skills"
-                          placeholder="Add research areas (e.g., Machine Learning, Quantum Computing)"
-                          value={skillInput}
-                          onChange={(e) => setSkillInput(e.target.value)}
-                          onKeyPress={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              addSkill();
-                            }
-                          }}
-                          data-testid="input-skill"
-                        />
-                        <Button
-                          type="button"
-                          onClick={addSkill}
-                          variant="outline"
-                          data-testid="button-add-skill"
-                        >
-                          Add
-                        </Button>
-                      </div>
-                      {formData.skills.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {formData.skills.map((skill) => (
-                            <Badge key={skill} variant="secondary" className="gap-1" data-testid={`badge-skill-${skill}`}>
-                              {skill}
-                              <button
-                                type="button"
-                                onClick={() => removeSkill(skill)}
-                                className="hover-elevate active-elevate-2 rounded-full p-0.5"
-                                data-testid={`button-remove-skill-${skill}`}
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   </div>
                 )}
@@ -619,124 +637,71 @@ export default function Profile() {
                 {formData.userType === "Student in Rochester" && (
                   <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-500">
                     <div className="space-y-2">
-                      <Label htmlFor="bio">Bio & Startup Vision</Label>
-                      <Textarea
-                        id="bio"
-                        placeholder="Tell us about yourself and your startup idea or current venture. What problem are you solving?"
-                        value={formData.bio}
-                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                        className="min-h-32"
-                        data-testid="textarea-bio"
+                      <Label htmlFor="startupName">Startup Name</Label>
+                      <Input
+                        id="startupName"
+                        placeholder="Enter your startup name"
+                        value={formData.startupName}
+                        onChange={(e) => setFormData({ ...formData, startupName: e.target.value })}
+                        data-testid="input-startup-name"
                       />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="major">Major</Label>
+                        <Label htmlFor="startupStage">Startup Stage</Label>
                         <Select
-                          value={formData.major}
-                          onValueChange={(value) => setFormData({ ...formData, major: value })}
+                          value={formData.startupStage}
+                          onValueChange={(value) => setFormData({ ...formData, startupStage: value })}
                         >
-                          <SelectTrigger id="major" data-testid="select-major">
-                            <SelectValue placeholder="Select your major" />
+                          <SelectTrigger id="startupStage" data-testid="select-startup-stage">
+                            <SelectValue placeholder="Select your startup stage" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Computer Science">Computer Science</SelectItem>
-                            <SelectItem value="Engineering">Engineering</SelectItem>
-                            <SelectItem value="Business">Business</SelectItem>
-                            <SelectItem value="Design">Design</SelectItem>
-                            <SelectItem value="Data Science">Data Science</SelectItem>
-                            <SelectItem value="Mathematics">Mathematics</SelectItem>
-                            <SelectItem value="Economics">Economics</SelectItem>
-                            <SelectItem value="Biology">Biology</SelectItem>
-                            <SelectItem value="Chemistry">Chemistry</SelectItem>
-                            <SelectItem value="Physics">Physics</SelectItem>
-                            <SelectItem value="Psychology">Psychology</SelectItem>
-                            <SelectItem value="Other">Other</SelectItem>
+                            <SelectItem value="Idea">Idea</SelectItem>
+                            <SelectItem value="Prototype">Prototype</SelectItem>
+                            <SelectItem value="Funded">Funded</SelectItem>
+                            <SelectItem value="Scaling">Scaling</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="year">Year</Label>
-                        <Select
-                          value={formData.year}
-                          onValueChange={(value) => setFormData({ ...formData, year: value })}
-                        >
-                          <SelectTrigger id="year" data-testid="select-year">
-                            <SelectValue placeholder="Select your year" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Freshman">Freshman</SelectItem>
-                            <SelectItem value="Sophomore">Sophomore</SelectItem>
-                            <SelectItem value="Junior">Junior</SelectItem>
-                            <SelectItem value="Senior">Senior</SelectItem>
-                            <SelectItem value="Graduate">Graduate</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="availability">Availability</Label>
-                      <Select
-                        value={formData.availability}
-                        onValueChange={(value) => setFormData({ ...formData, availability: value })}
-                      >
-                        <SelectTrigger id="availability" data-testid="select-availability">
-                          <SelectValue placeholder="Select your availability" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Available">Available Now</SelectItem>
-                          <SelectItem value="Part-time">Part-time Only</SelectItem>
-                          <SelectItem value="Looking">Actively Looking</SelectItem>
-                          <SelectItem value="Not Available">Not Available</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="skills">Skills & Technologies</Label>
-                      <div className="flex gap-2">
+                        <Label htmlFor="teamSize">Team Size</Label>
                         <Input
-                          id="skills"
-                          placeholder="Add skills (e.g., React, Python, Product Design)"
-                          value={skillInput}
-                          onChange={(e) => setSkillInput(e.target.value)}
-                          onKeyPress={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              addSkill();
-                            }
-                          }}
-                          data-testid="input-skill"
+                          id="teamSize"
+                          type="number"
+                          min="1"
+                          placeholder="Number of team members"
+                          value={formData.teamSize}
+                          onChange={(e) => setFormData({ ...formData, teamSize: e.target.value })}
+                          data-testid="input-team-size"
                         />
-                        <Button
-                          type="button"
-                          onClick={addSkill}
-                          variant="outline"
-                          data-testid="button-add-skill"
-                        >
-                          Add
-                        </Button>
                       </div>
-                      {formData.skills.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {formData.skills.map((skill) => (
-                            <Badge key={skill} variant="secondary" className="gap-1" data-testid={`badge-skill-${skill}`}>
-                              {skill}
-                              <button
-                                type="button"
-                                onClick={() => removeSkill(skill)}
-                                className="hover-elevate active-elevate-2 rounded-full p-0.5"
-                                data-testid={`button-remove-skill-${skill}`}
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="collaborationNeeds">Collaboration Needs</Label>
+                      <Textarea
+                        id="collaborationNeeds"
+                        placeholder="What kind of help are you looking for? (e.g., co-founders, technical expertise, mentors, funding)"
+                        value={formData.collaborationNeeds}
+                        onChange={(e) => setFormData({ ...formData, collaborationNeeds: e.target.value })}
+                        className="min-h-24"
+                        data-testid="textarea-collaboration-needs"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="bio">Bio</Label>
+                      <Textarea
+                        id="bio"
+                        placeholder="Tell us about yourself and your startup vision. What problem are you solving?"
+                        value={formData.bio}
+                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                        className="min-h-32"
+                        data-testid="textarea-bio"
+                      />
                     </div>
                   </div>
                 )}
