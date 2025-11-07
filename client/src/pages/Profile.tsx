@@ -155,20 +155,20 @@ export default function Profile() {
       cleanedData.teamSize = undefined;
       cleanedData.collaborationNeeds = "";
     } else if (formData.userType === "Student in Rochester") {
-      // Student in Rochester (with startup): major, year, availability, startup fields
-      cleanedData.major = formData.major?.trim() || undefined;
-      cleanedData.year = formData.year?.trim() || undefined;
-      cleanedData.availability = formData.availability?.trim() || undefined;
+      // Student in Rochester (with startup): startup fields only
       cleanedData.startupName = formData.startupName?.trim() || "";
       cleanedData.startupStage = formData.startupStage?.trim() || "";
       cleanedData.teamSize = formData.teamSize ? parseInt(formData.teamSize) : undefined;
       cleanedData.collaborationNeeds = formData.collaborationNeeds?.trim() || "";
-      // Clear company/professor fields
+      // Clear company/professor/student academic fields
       cleanedData.organization = "";
       cleanedData.website = "";
       cleanedData.collaborationInterests = "";
       cleanedData.researchArea = "";
       cleanedData.mentorshipInterests = "";
+      cleanedData.major = "";
+      cleanedData.year = "";
+      cleanedData.availability = "";
     } else if (formData.userType === "Professor") {
       // Professor: department (major), research area, mentorship interests
       cleanedData.major = formData.major?.trim() || undefined;
@@ -375,7 +375,15 @@ export default function Profile() {
                   {/* Student in Rochester (with startup) Card */}
                   <button
                     type="button"
-                    onClick={() => setFormData({ ...formData, userType: "Student in Rochester", organization: "" })}
+                    onClick={() => setFormData({ 
+                      ...formData, 
+                      userType: "Student in Rochester", 
+                      organization: "",
+                      // Clear academic fields since this role is startup-focused, not academic
+                      major: "",
+                      year: "",
+                      availability: ""
+                    })}
                     className={`p-4 rounded-lg border-2 text-left transition-all hover-elevate ${
                       formData.userType === "Student in Rochester"
                         ? "border-primary bg-primary/5 shadow-md"
