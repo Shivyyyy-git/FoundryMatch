@@ -24,7 +24,7 @@ export default function Landing() {
               onClick={handleLogin}
               data-testid="button-login"
             >
-              Sign in with Google
+              Sign Up
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </div>
@@ -145,7 +145,7 @@ export default function Landing() {
             onClick={handleLogin}
             data-testid="button-login-footer"
           >
-            Sign in with Google
+            Sign Up
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>
