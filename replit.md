@@ -23,7 +23,23 @@ The backend is built with Express.js on Node.js, using TypeScript. Authenticatio
 
 ### Data Architecture
 
-PostgreSQL (Neon serverless) is the primary database, managed with Drizzle ORM for type-safe queries and schema migrations. The schema includes Users (with extended profile fields and indexes for `major`, `year`, `availability`), Sessions, Projects (with `skills` GIN index, `is_approved`, `created_at` indexes), Startups (`is_approved`, `created_at` indexes), and Messages (with `sender_id`, `receiver_id`, `created_at` indexes).
+PostgreSQL (Neon serverless) is the primary database, managed with Drizzle ORM for type-safe queries and schema migrations. The schema includes:
+
+- **Users**: Extended profile fields with role-specific columns:
+  - Company: `organization`, `website`, `collaborationInterests`
+  - University Student: `major`, `year`, `availability`, `skills`
+  - Professor: `major` (used for department), `researchArea`, `mentorshipInterests`
+  - Student in Rochester: `startupName`, `startupStage`, `teamSize`, `collaborationNeeds`
+  - All roles: `bio`, `skills`
+  - Indexes: `major`, `year`, `availability`
+
+- **Sessions**: PostgreSQL session store managed by `connect-pg-simple`
+
+- **Projects**: User-submitted project gigs with `skills` GIN index, `is_approved`, `created_at` indexes
+
+- **Startups**: User-submitted startup opportunities with `is_approved`, `created_at` indexes
+
+- **Messages**: Direct messaging between users with `sender_id`, `receiver_id`, `created_at` indexes
 
 ### Key Architectural Decisions
 
