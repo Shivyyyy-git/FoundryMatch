@@ -88,10 +88,8 @@ export default function Profile() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Filter out empty strings to prevent sending invalid data
+    // Build cleaned data object
     const cleanedData: any = {
-      userType: formData.userType?.trim() || undefined,
-      organization: formData.organization?.trim() || undefined,
       bio: formData.bio || undefined,
       major: formData.major?.trim() || undefined,
       year: formData.year?.trim() || undefined,
@@ -99,7 +97,21 @@ export default function Profile() {
       skills: formData.skills,
     };
     
-    // Remove undefined fields
+    // Always include userType if present
+    if (formData.userType) {
+      cleanedData.userType = formData.userType.trim();
+    }
+    
+    // For organization: always send it to clear old values when switching from Company
+    // If userType is not Company, explicitly send empty string to clear it
+    if (formData.userType === "Company") {
+      cleanedData.organization = formData.organization?.trim() || "";
+    } else {
+      // Explicitly clear organization for non-Company types
+      cleanedData.organization = "";
+    }
+    
+    // Remove undefined fields (but keep empty strings for organization)
     Object.keys(cleanedData).forEach(key => {
       if (cleanedData[key] === undefined) {
         delete cleanedData[key];
@@ -204,7 +216,7 @@ export default function Profile() {
                   {/* University Student Card */}
                   <button
                     type="button"
-                    onClick={() => setFormData({ ...formData, userType: "University Student" })}
+                    onClick={() => setFormData({ ...formData, userType: "University Student", organization: "" })}
                     className={`p-4 rounded-lg border-2 text-left transition-all hover-elevate ${
                       formData.userType === "University Student"
                         ? "border-primary bg-primary/5"
@@ -232,7 +244,7 @@ export default function Profile() {
                   {/* Professor Card */}
                   <button
                     type="button"
-                    onClick={() => setFormData({ ...formData, userType: "Professor" })}
+                    onClick={() => setFormData({ ...formData, userType: "Professor", organization: "" })}
                     className={`p-4 rounded-lg border-2 text-left transition-all hover-elevate ${
                       formData.userType === "Professor"
                         ? "border-primary bg-primary/5"
@@ -260,7 +272,7 @@ export default function Profile() {
                   {/* Student in Rochester Card */}
                   <button
                     type="button"
-                    onClick={() => setFormData({ ...formData, userType: "Student in Rochester" })}
+                    onClick={() => setFormData({ ...formData, userType: "Student in Rochester", organization: "" })}
                     className={`p-4 rounded-lg border-2 text-left transition-all hover-elevate ${
                       formData.userType === "Student in Rochester"
                         ? "border-primary bg-primary/5"
