@@ -1,8 +1,19 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Users, Briefcase, Rocket, ArrowRight, CheckCircle2 } from "lucide-react";
+import { SiGoogle } from "react-icons/si";
 
 export default function Landing() {
+  const [showSignupModal, setShowSignupModal] = useState(false);
+
   const handleLogin = () => {
     window.location.href = "/api/login";
   };
@@ -21,8 +32,8 @@ export default function Landing() {
           <div className="flex flex-wrap justify-center gap-4">
             <Button 
               size="lg"
-              onClick={handleLogin}
-              data-testid="button-login"
+              onClick={() => setShowSignupModal(true)}
+              data-testid="button-signup"
             >
               Sign Up
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -142,14 +153,64 @@ export default function Landing() {
           <Button 
             size="lg" 
             variant="secondary"
-            onClick={handleLogin}
-            data-testid="button-login-footer"
+            onClick={() => setShowSignupModal(true)}
+            data-testid="button-signup-footer"
           >
             Sign Up
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>
       </section>
+
+      {/* Signup Modal */}
+      <Dialog open={showSignupModal} onOpenChange={setShowSignupModal}>
+        <DialogContent className="sm:max-w-md" data-testid="dialog-signup">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center">
+              Join MatchMeUp Foundry
+            </DialogTitle>
+            <DialogDescription className="text-center pt-2">
+              Connect with the University of Rochester community
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col gap-4 py-4">
+            <Button
+              size="lg"
+              onClick={handleLogin}
+              className="w-full gap-3"
+              data-testid="button-google-signup"
+            >
+              <SiGoogle className="h-5 w-5" />
+              Continue with Google
+            </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Quick & Secure
+                </span>
+              </div>
+            </div>
+
+            <div className="text-center text-sm text-muted-foreground">
+              <p>
+                Sign up securely with your Google account.
+              </p>
+              <p className="mt-2">
+                No passwords to remember. Quick and easy.
+              </p>
+            </div>
+          </div>
+
+          <div className="text-xs text-center text-muted-foreground border-t pt-4">
+            By signing up, you agree to our Terms of Service and Privacy Policy
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
