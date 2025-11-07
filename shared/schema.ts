@@ -51,23 +51,26 @@ export const users = pgTable("users", {
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
-// Profile update schema with validation - require non-empty, non-whitespace strings for academic fields
+// Profile update schema with validation - allow empty strings for clearing role-specific fields
 export const updateProfileSchema = z.object({
   bio: z.string().optional(),
   userType: z.string().optional(),
   organization: z.string().optional(),
   headline: z.string().optional(),
   major: z.string()
-    .min(1, "Major cannot be empty")
-    .refine((val) => val.trim().length > 0, { message: "Major cannot be whitespace" })
+    .refine((val) => val === "" || val.trim().length > 0, { 
+      message: "Major must be either empty (to clear) or contain valid text" 
+    })
     .optional(),
   year: z.string()
-    .min(1, "Year cannot be empty")
-    .refine((val) => val.trim().length > 0, { message: "Year cannot be whitespace" })
+    .refine((val) => val === "" || val.trim().length > 0, { 
+      message: "Year must be either empty (to clear) or contain valid text" 
+    })
     .optional(),
   availability: z.string()
-    .min(1, "Availability cannot be empty")
-    .refine((val) => val.trim().length > 0, { message: "Availability cannot be whitespace" })
+    .refine((val) => val === "" || val.trim().length > 0, { 
+      message: "Availability must be either empty (to clear) or contain valid text" 
+    })
     .optional(),
   skills: z.array(z.string()).optional(),
 });

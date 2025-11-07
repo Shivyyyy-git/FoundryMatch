@@ -88,12 +88,9 @@ export default function Profile() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Build cleaned data object
+    // Build role-specific data object
     const cleanedData: any = {
       bio: formData.bio || undefined,
-      major: formData.major?.trim() || undefined,
-      year: formData.year?.trim() || undefined,
-      availability: formData.availability?.trim() || undefined,
       skills: formData.skills,
     };
     
@@ -102,16 +99,34 @@ export default function Profile() {
       cleanedData.userType = formData.userType.trim();
     }
     
-    // For organization: always send it to clear old values when switching from Company
-    // If userType is not Company, explicitly send empty string to clear it
+    // Role-specific fields
     if (formData.userType === "Company") {
+      // Company: organization only, clear student/professor fields with empty strings
       cleanedData.organization = formData.organization?.trim() || "";
-    } else {
-      // Explicitly clear organization for non-Company types
+      cleanedData.major = "";
+      cleanedData.year = "";
+      cleanedData.availability = "";
+    } else if (formData.userType === "University Student" || formData.userType === "Student in Rochester") {
+      // Students: major, year, availability, clear organization with empty string
       cleanedData.organization = "";
+      cleanedData.major = formData.major?.trim() || undefined;
+      cleanedData.year = formData.year?.trim() || undefined;
+      cleanedData.availability = formData.availability?.trim() || undefined;
+    } else if (formData.userType === "Professor") {
+      // Professor: major (as department), clear year/availability/organization with empty strings
+      cleanedData.organization = "";
+      cleanedData.major = formData.major?.trim() || undefined;
+      cleanedData.year = "";
+      cleanedData.availability = "";
+    } else {
+      // Default: clear all role-specific fields with empty strings
+      cleanedData.organization = "";
+      cleanedData.major = "";
+      cleanedData.year = "";
+      cleanedData.availability = "";
     }
     
-    // Remove undefined fields (but keep empty strings for organization)
+    // Remove undefined fields (keep empty strings to clear database values)
     Object.keys(cleanedData).forEach(key => {
       if (cleanedData[key] === undefined) {
         delete cleanedData[key];
@@ -188,7 +203,14 @@ export default function Profile() {
                   {/* Company Card */}
                   <button
                     type="button"
-                    onClick={() => setFormData({ ...formData, userType: "Company" })}
+                    onClick={() => setFormData({ 
+                      ...formData, 
+                      userType: "Company",
+                      // Clear student/professor-specific fields
+                      major: "",
+                      year: "",
+                      availability: ""
+                    })}
                     className={`p-4 rounded-lg border-2 text-left transition-all hover-elevate ${
                       formData.userType === "Company"
                         ? "border-primary bg-primary/5 shadow-md"
@@ -244,7 +266,14 @@ export default function Profile() {
                   {/* Professor Card */}
                   <button
                     type="button"
-                    onClick={() => setFormData({ ...formData, userType: "Professor", organization: "" })}
+                    onClick={() => setFormData({ 
+                      ...formData, 
+                      userType: "Professor", 
+                      organization: "",
+                      // Clear student-specific fields
+                      year: "",
+                      availability: ""
+                    })}
                     className={`p-4 rounded-lg border-2 text-left transition-all hover-elevate ${
                       formData.userType === "Professor"
                         ? "border-primary bg-primary/5 shadow-md"
