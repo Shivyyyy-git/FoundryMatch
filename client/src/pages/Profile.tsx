@@ -17,7 +17,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, X, Building2, GraduationCap, BookOpen, Users } from "lucide-react";
+import { User as UserIcon, X, Building2, GraduationCap, BookOpen, Lightbulb } from "lucide-react";
 import type { User } from "@shared/schema";
 
 export default function Profile() {
@@ -191,7 +191,7 @@ export default function Profile() {
                     onClick={() => setFormData({ ...formData, userType: "Company" })}
                     className={`p-4 rounded-lg border-2 text-left transition-all hover-elevate ${
                       formData.userType === "Company"
-                        ? "border-primary bg-primary/5"
+                        ? "border-primary bg-primary/5 shadow-md"
                         : "border-border bg-card"
                     }`}
                     data-testid="card-user-type-company"
@@ -207,7 +207,7 @@ export default function Profile() {
                       <div className="flex-1">
                         <h4 className="font-semibold mb-1">Company outside Rochester</h4>
                         <p className="text-sm text-muted-foreground">
-                          I'm an organization looking to connect with students or researchers.
+                          We're an organization excited to collaborate with students, researchers, or innovative teams.
                         </p>
                       </div>
                     </div>
@@ -219,7 +219,7 @@ export default function Profile() {
                     onClick={() => setFormData({ ...formData, userType: "University Student", organization: "" })}
                     className={`p-4 rounded-lg border-2 text-left transition-all hover-elevate ${
                       formData.userType === "University Student"
-                        ? "border-primary bg-primary/5"
+                        ? "border-primary bg-primary/5 shadow-md"
                         : "border-border bg-card"
                     }`}
                     data-testid="card-user-type-university-student"
@@ -235,7 +235,7 @@ export default function Profile() {
                       <div className="flex-1">
                         <h4 className="font-semibold mb-1">University student in Rochester</h4>
                         <p className="text-sm text-muted-foreground">
-                          I'm a student looking to join or start a project.
+                          I'm a student eager to join a project, build something new, or connect with like-minded peers.
                         </p>
                       </div>
                     </div>
@@ -247,7 +247,7 @@ export default function Profile() {
                     onClick={() => setFormData({ ...formData, userType: "Professor", organization: "" })}
                     className={`p-4 rounded-lg border-2 text-left transition-all hover-elevate ${
                       formData.userType === "Professor"
-                        ? "border-primary bg-primary/5"
+                        ? "border-primary bg-primary/5 shadow-md"
                         : "border-border bg-card"
                     }`}
                     data-testid="card-user-type-professor"
@@ -263,19 +263,19 @@ export default function Profile() {
                       <div className="flex-1">
                         <h4 className="font-semibold mb-1">Professor</h4>
                         <p className="text-sm text-muted-foreground">
-                          I'm a faculty member interested in mentoring or collaboration.
+                          I'm a faculty member interested in mentoring, supporting student innovation, and research collaboration.
                         </p>
                       </div>
                     </div>
                   </button>
 
-                  {/* Student in Rochester Card */}
+                  {/* Student in Rochester (with startup) Card */}
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, userType: "Student in Rochester", organization: "" })}
                     className={`p-4 rounded-lg border-2 text-left transition-all hover-elevate ${
                       formData.userType === "Student in Rochester"
-                        ? "border-primary bg-primary/5"
+                        ? "border-primary bg-primary/5 shadow-md"
                         : "border-border bg-card"
                     }`}
                     data-testid="card-user-type-student-rochester"
@@ -284,152 +284,431 @@ export default function Profile() {
                       <div className={`p-2 rounded-lg ${
                         formData.userType === "Student in Rochester" ? "bg-primary/10" : "bg-muted"
                       }`}>
-                        <Users className={`h-5 w-5 ${
+                        <Lightbulb className={`h-5 w-5 ${
                           formData.userType === "Student in Rochester" ? "text-primary" : "text-muted-foreground"
                         }`} />
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-semibold mb-1">Student in Rochester</h4>
+                        <h4 className="font-semibold mb-1">Student in Rochester (with a startup)</h4>
                         <p className="text-sm text-muted-foreground">
-                          I'm a student looking for opportunities within Rochester.
+                          I already have a startup or idea and I'm looking for teammates, mentors, or new opportunities.
                         </p>
                       </div>
                     </div>
                   </button>
                 </div>
+              </div>
 
-                {/* Conditional Organization Input for Company */}
+              {/* Dynamic Form Fields with Transitions */}
+              <div className="space-y-6 transition-all duration-300 ease-in-out">
+                {/* Company Form */}
                 {formData.userType === "Company" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="organization">Organization Name</Label>
-                    <Input
-                      id="organization"
-                      placeholder="Enter your company or organization name"
-                      value={formData.organization}
-                      onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
-                      data-testid="input-organization"
-                    />
+                  <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-500">
+                    <div className="space-y-2">
+                      <Label htmlFor="organization">Organization Name *</Label>
+                      <Input
+                        id="organization"
+                        placeholder="Enter your company or organization name"
+                        value={formData.organization}
+                        onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
+                        data-testid="input-organization"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="bio">About Your Organization</Label>
+                      <Textarea
+                        id="bio"
+                        placeholder="Tell us about your company, your mission, and what kind of collaborations you're interested in..."
+                        value={formData.bio}
+                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                        className="min-h-32"
+                        data-testid="textarea-bio"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="skills">Areas of Expertise</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="skills"
+                          placeholder="Add expertise areas (e.g., AI/ML, FinTech, Healthcare)"
+                          value={skillInput}
+                          onChange={(e) => setSkillInput(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              addSkill();
+                            }
+                          }}
+                          data-testid="input-skill"
+                        />
+                        <Button
+                          type="button"
+                          onClick={addSkill}
+                          variant="outline"
+                          data-testid="button-add-skill"
+                        >
+                          Add
+                        </Button>
+                      </div>
+                      {formData.skills.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {formData.skills.map((skill) => (
+                            <Badge key={skill} variant="secondary" className="gap-1" data-testid={`badge-skill-${skill}`}>
+                              {skill}
+                              <button
+                                type="button"
+                                onClick={() => removeSkill(skill)}
+                                className="hover-elevate active-elevate-2 rounded-full p-0.5"
+                                data-testid={`button-remove-skill-${skill}`}
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
-                  placeholder="Tell us about yourself, your interests, and what you're looking for..."
-                  value={formData.bio}
-                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                  className="min-h-32"
-                  data-testid="textarea-bio"
-                />
-              </div>
+                {/* University Student Form */}
+                {formData.userType === "University Student" && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-500">
+                    <div className="space-y-2">
+                      <Label htmlFor="bio">Bio</Label>
+                      <Textarea
+                        id="bio"
+                        placeholder="Tell us about yourself, your interests, and what you're looking for..."
+                        value={formData.bio}
+                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                        className="min-h-32"
+                        data-testid="textarea-bio"
+                      />
+                    </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="major">Major</Label>
-                  <Select
-                    value={formData.major}
-                    onValueChange={(value) => setFormData({ ...formData, major: value })}
-                  >
-                    <SelectTrigger id="major" data-testid="select-major">
-                      <SelectValue placeholder="Select your major" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Computer Science">Computer Science</SelectItem>
-                      <SelectItem value="Engineering">Engineering</SelectItem>
-                      <SelectItem value="Business">Business</SelectItem>
-                      <SelectItem value="Design">Design</SelectItem>
-                      <SelectItem value="Data Science">Data Science</SelectItem>
-                      <SelectItem value="Mathematics">Mathematics</SelectItem>
-                      <SelectItem value="Economics">Economics</SelectItem>
-                      <SelectItem value="Biology">Biology</SelectItem>
-                      <SelectItem value="Chemistry">Chemistry</SelectItem>
-                      <SelectItem value="Physics">Physics</SelectItem>
-                      <SelectItem value="Psychology">Psychology</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="year">Year</Label>
-                  <Select
-                    value={formData.year}
-                    onValueChange={(value) => setFormData({ ...formData, year: value })}
-                  >
-                    <SelectTrigger id="year" data-testid="select-year">
-                      <SelectValue placeholder="Select your year" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Freshman">Freshman</SelectItem>
-                      <SelectItem value="Sophomore">Sophomore</SelectItem>
-                      <SelectItem value="Junior">Junior</SelectItem>
-                      <SelectItem value="Senior">Senior</SelectItem>
-                      <SelectItem value="Graduate">Graduate</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="availability">Availability</Label>
-                <Select
-                  value={formData.availability}
-                  onValueChange={(value) => setFormData({ ...formData, availability: value })}
-                >
-                  <SelectTrigger id="availability" data-testid="select-availability">
-                    <SelectValue placeholder="Select your availability" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Available">Available Now</SelectItem>
-                    <SelectItem value="Part-time">Part-time Only</SelectItem>
-                    <SelectItem value="Looking">Actively Looking</SelectItem>
-                    <SelectItem value="Not Available">Not Available</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="skills">Skills</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="skills"
-                    placeholder="Add a skill (e.g., React, Python, UI/UX)"
-                    value={skillInput}
-                    onChange={(e) => setSkillInput(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addSkill();
-                      }
-                    }}
-                    data-testid="input-skill"
-                  />
-                  <Button
-                    type="button"
-                    onClick={addSkill}
-                    variant="outline"
-                    data-testid="button-add-skill"
-                  >
-                    Add
-                  </Button>
-                </div>
-                {formData.skills.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {formData.skills.map((skill) => (
-                      <Badge key={skill} variant="secondary" className="gap-1" data-testid={`badge-skill-${skill}`}>
-                        {skill}
-                        <button
-                          type="button"
-                          onClick={() => removeSkill(skill)}
-                          className="hover-elevate active-elevate-2 rounded-full p-0.5"
-                          data-testid={`button-remove-skill-${skill}`}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="major">Major</Label>
+                        <Select
+                          value={formData.major}
+                          onValueChange={(value) => setFormData({ ...formData, major: value })}
                         >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
+                          <SelectTrigger id="major" data-testid="select-major">
+                            <SelectValue placeholder="Select your major" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Computer Science">Computer Science</SelectItem>
+                            <SelectItem value="Engineering">Engineering</SelectItem>
+                            <SelectItem value="Business">Business</SelectItem>
+                            <SelectItem value="Design">Design</SelectItem>
+                            <SelectItem value="Data Science">Data Science</SelectItem>
+                            <SelectItem value="Mathematics">Mathematics</SelectItem>
+                            <SelectItem value="Economics">Economics</SelectItem>
+                            <SelectItem value="Biology">Biology</SelectItem>
+                            <SelectItem value="Chemistry">Chemistry</SelectItem>
+                            <SelectItem value="Physics">Physics</SelectItem>
+                            <SelectItem value="Psychology">Psychology</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="year">Year</Label>
+                        <Select
+                          value={formData.year}
+                          onValueChange={(value) => setFormData({ ...formData, year: value })}
+                        >
+                          <SelectTrigger id="year" data-testid="select-year">
+                            <SelectValue placeholder="Select your year" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Freshman">Freshman</SelectItem>
+                            <SelectItem value="Sophomore">Sophomore</SelectItem>
+                            <SelectItem value="Junior">Junior</SelectItem>
+                            <SelectItem value="Senior">Senior</SelectItem>
+                            <SelectItem value="Graduate">Graduate</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="availability">Availability</Label>
+                      <Select
+                        value={formData.availability}
+                        onValueChange={(value) => setFormData({ ...formData, availability: value })}
+                      >
+                        <SelectTrigger id="availability" data-testid="select-availability">
+                          <SelectValue placeholder="Select your availability" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Available">Available Now</SelectItem>
+                          <SelectItem value="Part-time">Part-time Only</SelectItem>
+                          <SelectItem value="Looking">Actively Looking</SelectItem>
+                          <SelectItem value="Not Available">Not Available</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="skills">Skills</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="skills"
+                          placeholder="Add a skill (e.g., React, Python, UI/UX)"
+                          value={skillInput}
+                          onChange={(e) => setSkillInput(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              addSkill();
+                            }
+                          }}
+                          data-testid="input-skill"
+                        />
+                        <Button
+                          type="button"
+                          onClick={addSkill}
+                          variant="outline"
+                          data-testid="button-add-skill"
+                        >
+                          Add
+                        </Button>
+                      </div>
+                      {formData.skills.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {formData.skills.map((skill) => (
+                            <Badge key={skill} variant="secondary" className="gap-1" data-testid={`badge-skill-${skill}`}>
+                              {skill}
+                              <button
+                                type="button"
+                                onClick={() => removeSkill(skill)}
+                                className="hover-elevate active-elevate-2 rounded-full p-0.5"
+                                data-testid={`button-remove-skill-${skill}`}
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Professor Form */}
+                {formData.userType === "Professor" && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-500">
+                    <div className="space-y-2">
+                      <Label htmlFor="bio">Bio</Label>
+                      <Textarea
+                        id="bio"
+                        placeholder="Tell us about your research interests, teaching focus, and how you'd like to collaborate with students..."
+                        value={formData.bio}
+                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                        className="min-h-32"
+                        data-testid="textarea-bio"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="major">Department / Area of Expertise</Label>
+                      <Select
+                        value={formData.major}
+                        onValueChange={(value) => setFormData({ ...formData, major: value })}
+                      >
+                        <SelectTrigger id="major" data-testid="select-major">
+                          <SelectValue placeholder="Select your department" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Computer Science">Computer Science</SelectItem>
+                          <SelectItem value="Engineering">Engineering</SelectItem>
+                          <SelectItem value="Business">Business</SelectItem>
+                          <SelectItem value="Design">Design</SelectItem>
+                          <SelectItem value="Data Science">Data Science</SelectItem>
+                          <SelectItem value="Mathematics">Mathematics</SelectItem>
+                          <SelectItem value="Economics">Economics</SelectItem>
+                          <SelectItem value="Biology">Biology</SelectItem>
+                          <SelectItem value="Chemistry">Chemistry</SelectItem>
+                          <SelectItem value="Physics">Physics</SelectItem>
+                          <SelectItem value="Psychology">Psychology</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="skills">Research Areas & Skills</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="skills"
+                          placeholder="Add research areas (e.g., Machine Learning, Quantum Computing)"
+                          value={skillInput}
+                          onChange={(e) => setSkillInput(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              addSkill();
+                            }
+                          }}
+                          data-testid="input-skill"
+                        />
+                        <Button
+                          type="button"
+                          onClick={addSkill}
+                          variant="outline"
+                          data-testid="button-add-skill"
+                        >
+                          Add
+                        </Button>
+                      </div>
+                      {formData.skills.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {formData.skills.map((skill) => (
+                            <Badge key={skill} variant="secondary" className="gap-1" data-testid={`badge-skill-${skill}`}>
+                              {skill}
+                              <button
+                                type="button"
+                                onClick={() => removeSkill(skill)}
+                                className="hover-elevate active-elevate-2 rounded-full p-0.5"
+                                data-testid={`button-remove-skill-${skill}`}
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Student in Rochester (with startup) Form */}
+                {formData.userType === "Student in Rochester" && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-500">
+                    <div className="space-y-2">
+                      <Label htmlFor="bio">Bio & Startup Vision</Label>
+                      <Textarea
+                        id="bio"
+                        placeholder="Tell us about yourself and your startup idea or current venture. What problem are you solving?"
+                        value={formData.bio}
+                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                        className="min-h-32"
+                        data-testid="textarea-bio"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="major">Major</Label>
+                        <Select
+                          value={formData.major}
+                          onValueChange={(value) => setFormData({ ...formData, major: value })}
+                        >
+                          <SelectTrigger id="major" data-testid="select-major">
+                            <SelectValue placeholder="Select your major" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Computer Science">Computer Science</SelectItem>
+                            <SelectItem value="Engineering">Engineering</SelectItem>
+                            <SelectItem value="Business">Business</SelectItem>
+                            <SelectItem value="Design">Design</SelectItem>
+                            <SelectItem value="Data Science">Data Science</SelectItem>
+                            <SelectItem value="Mathematics">Mathematics</SelectItem>
+                            <SelectItem value="Economics">Economics</SelectItem>
+                            <SelectItem value="Biology">Biology</SelectItem>
+                            <SelectItem value="Chemistry">Chemistry</SelectItem>
+                            <SelectItem value="Physics">Physics</SelectItem>
+                            <SelectItem value="Psychology">Psychology</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="year">Year</Label>
+                        <Select
+                          value={formData.year}
+                          onValueChange={(value) => setFormData({ ...formData, year: value })}
+                        >
+                          <SelectTrigger id="year" data-testid="select-year">
+                            <SelectValue placeholder="Select your year" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Freshman">Freshman</SelectItem>
+                            <SelectItem value="Sophomore">Sophomore</SelectItem>
+                            <SelectItem value="Junior">Junior</SelectItem>
+                            <SelectItem value="Senior">Senior</SelectItem>
+                            <SelectItem value="Graduate">Graduate</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="availability">Availability</Label>
+                      <Select
+                        value={formData.availability}
+                        onValueChange={(value) => setFormData({ ...formData, availability: value })}
+                      >
+                        <SelectTrigger id="availability" data-testid="select-availability">
+                          <SelectValue placeholder="Select your availability" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Available">Available Now</SelectItem>
+                          <SelectItem value="Part-time">Part-time Only</SelectItem>
+                          <SelectItem value="Looking">Actively Looking</SelectItem>
+                          <SelectItem value="Not Available">Not Available</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="skills">Skills & Technologies</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="skills"
+                          placeholder="Add skills (e.g., React, Python, Product Design)"
+                          value={skillInput}
+                          onChange={(e) => setSkillInput(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              addSkill();
+                            }
+                          }}
+                          data-testid="input-skill"
+                        />
+                        <Button
+                          type="button"
+                          onClick={addSkill}
+                          variant="outline"
+                          data-testid="button-add-skill"
+                        >
+                          Add
+                        </Button>
+                      </div>
+                      {formData.skills.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {formData.skills.map((skill) => (
+                            <Badge key={skill} variant="secondary" className="gap-1" data-testid={`badge-skill-${skill}`}>
+                              {skill}
+                              <button
+                                type="button"
+                                onClick={() => removeSkill(skill)}
+                                className="hover-elevate active-elevate-2 rounded-full p-0.5"
+                                data-testid={`button-remove-skill-${skill}`}
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

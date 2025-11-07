@@ -1,0 +1,71 @@
+Update the “Create Profile” page so that it dynamically adjusts form fields based on the user’s selected role.
+
+🧩 1. Role Selection
+Keep the same four role cards at the top, but update the copy to sound more natural and welcoming from the user’s perspective:
+
+1. **Company outside Rochester**  
+   “We’re an organization excited to collaborate with students, researchers, or innovative teams.”
+
+2. **University student in Rochester**  
+   “I’m a student eager to join a project, build something new, or connect with like-minded peers.”
+
+3. **Professor**  
+   “I’m a faculty member interested in mentoring, supporting student innovation, and research collaboration.”
+
+4. **Student in Rochester (with a startup)**  
+   “I already have a startup or idea and I’m looking for teammates, mentors, or new opportunities.”
+
+When a card is selected, highlight it with a blue border and a soft shadow.  
+Use a smooth Tailwind fade/slide transition to switch between role-specific forms.
+
+---
+
+📋 2. Dynamic Form Fields  
+Each role should display slightly different form fields below:
+
+**Company outside the University of Rochester**
+- Organization Name (text)
+- Website (optional)
+- Collaboration Interests (textarea)
+- Bio (textarea)
+
+**Student in Rochester**
+- Major (dropdown)
+- Year (dropdown)
+- Availability (dropdown)
+- Skills (tag input)
+- Bio (textarea)
+
+**Professor / Faculty Member**
+- Department (text)
+- Research Area (text)
+- Mentorship Interests (textarea)
+- Bio (textarea)
+
+**Student in Rochester (with a Startup)**
+- Startup Name (text)
+- Startup Stage (dropdown: Idea / Prototype / Funded / Scaling)
+- Team Size (number input)
+- Collaboration Needs (textarea)
+- Bio (textarea)
+
+---
+
+💾 3. Save Button
+- Keep the “Save Profile” button fixed at the bottom of the page.
+- When clicked, it saves all filled-in data including the selected role.
+- Show a confirmation toast: “Your profile has been saved successfully!”
+
+---
+
+🎨 4. Design
+- Use Tailwind for consistent spacing and styling.
+- Each role form should appear in a rounded, light-gray card container.
+- Maintain the same clean and minimal FoundryMatch look.
+
+---
+
+⚙️ 5. Implementation Notes
+- Use a single formData object (e.g., formData.role, formData.major, etc.).
+- Render different sections conditionally based on the selected role.
+- Make the form components modular so each role form is in its own subcomponent.
