@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "vite build && npm run build:server",
-    "build:server": "mkdir -p dist && cp -r server dist/ && cp -r shared dist/",
+    "build:server": "mkdir -p dist && cp -r server dist/ && cp -r shared dist/ && cp vite.config.ts dist/",
     "start": "NODE_ENV=production tsx dist/server/index.ts",
     "check": "tsc -p tsconfig.json",
     "db:push": "drizzle-kit push"
