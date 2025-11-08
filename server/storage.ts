@@ -1,510 +1,272 @@
+import { eq } from "drizzle-orm";
 import {
-  users,
+  profiles,
+  type InsertProfile,
+  type Profile,
+  type UpdateProfileInput,
   type User,
-  type UpsertUser,
-  projects,
-  type Project,
-  type InsertProject,
-  startups,
-  type Startup,
-  type InsertStartup,
-  messages,
-  type Message,
-  type InsertMessage,
-} from "@shared/schema";
-import { db } from "./db";
-import { eq, desc, and, or, ilike, sql, count } from "drizzle-orm";
+  users,
+} from "../shared/schema.js";
+import { db } from "./db.js";
 
-export interface PaginatedResult<T> {
-  data: T[];
-  total: number;
-  hasMore: boolean;
+export type UserProfileContext = {
+  user: User;
+  profile: Profile;
+  profileComplete: boolean;
+};
+
+const PROFILE_BASE_FIELDS: Array<keyof Profile> = ["headline", "bio"];
+
+export function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
 }
 
-export interface IStorage {
-  // User operations
-  getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
-  updateUserProfile(id: string, data: Partial<User>): Promise<User>;
-  getAllUsers(limit?: number, offset?: number): Promise<PaginatedResult<User>>;
-  searchUsers(query?: string, limit?: number, offset?: number): Promise<PaginatedResult<User>>;
-  
-  // Project operations
-  createProject(project: InsertProject, userId: string): Promise<Project>;
-  getProject(id: string): Promise<Project | undefined>;
-  getAllProjects(approvedOnly?: boolean, limit?: number, offset?: number): Promise<PaginatedResult<Project>>;
-  searchProjects(query?: string, approvedOnly?: boolean, limit?: number, offset?: number): Promise<PaginatedResult<Project>>;
-  getUserProjects(userId: string): Promise<Project[]>;
-  updateProject(id: string, data: Partial<Project>): Promise<Project>;
-  deleteProject(id: string): Promise<void>;
-  approveProject(id: string): Promise<Project>;
-  
-  // Startup operations
-  createStartup(startup: InsertStartup, userId: string): Promise<Startup>;
-  getStartup(id: string): Promise<Startup | undefined>;
-  getAllStartups(approvedOnly?: boolean, limit?: number, offset?: number): Promise<PaginatedResult<Startup>>;
-  searchStartups(query?: string, approvedOnly?: boolean, limit?: number, offset?: number): Promise<PaginatedResult<Startup>>;
-  getUserStartups(userId: string): Promise<Startup[]>;
-  updateStartup(id: string, data: Partial<Startup>): Promise<Startup>;
-  deleteStartup(id: string): Promise<void>;
-  approveStartup(id: string): Promise<Startup>;
-  
-  // Message operations
-  createMessage(message: InsertMessage): Promise<Message>;
-  getUserMessages(userId: string): Promise<Message[]>;
-  getConversation(user1Id: string, user2Id: string): Promise<Message[]>;
-  markMessageAsRead(id: string): Promise<Message>;
+function normalizeOptionalString(value?: string | null): string | null | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (value === null) {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
 }
 
-export class DatabaseStorage implements IStorage {
-  // User operations
-  async getUser(id: string): Promise<User | undefined> {
+function normalizeStringArray(values?: string[] | null): string[] | undefined {
+  if (values === undefined) {
+    return undefined;
+  }
+  if (values === null) {
+    return [];
+  }
+
+  const deduped = Array.from(
+    new Set(values.map((entry) => entry.trim()).filter((entry) => entry.length)),
+  );
+
+  return deduped;
+}
+
+export function deriveProfileName(
+  preferredName: string | null | undefined,
+  email: string,
+) {
+  if (preferredName && preferredName.trim().length > 0) {
+    return preferredName.trim();
+  }
+  return email.split("@")[0];
+}
+
+function computeProfileCompletion(user: User, profile: Profile): boolean {
+  const baseComplete = PROFILE_BASE_FIELDS.every((field) => {
+    const value = profile[field];
+    if (typeof value === "string") {
+      return value.trim().length > 0;
+    }
+    return Boolean(value);
+  });
+
+  if (!baseComplete || profile.skills.length === 0) {
+    return false;
+  }
+
+  const researchAreas = profile.researchAreas ?? [];
+
+  switch (user.userType) {
+    case "student":
+      return Boolean(profile.graduationYear && profile.major?.trim().length);
+    case "professor":
+      return Boolean(
+        profile.department?.trim().length && researchAreas.length > 0,
+      );
+    case "company":
+      return Boolean(
+        profile.companyName?.trim().length &&
+          profile.industry &&
+          (profile.employeeCount ?? 0) > 0,
+      );
+    case "entrepreneur":
+      return Boolean(profile.startupName?.trim().length && profile.foundingYear);
+    default:
+      return false;
+  }
+}
+
+class DatabaseStorage {
+  async getUserById(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    // Validate required fields
-    if (!userData.email) {
-      throw new Error("Email is required for user authentication");
-    }
-    if (!userData.id) {
-      throw new Error("User ID (OIDC sub) is required for authentication");
-    }
-
-    // Try to find user by id first (OIDC sub is the stable identifier)
-    const [existingById] = await db
+  async getProfileByUserId(userId: string): Promise<Profile | undefined> {
+    const [profile] = await db
       .select()
-      .from(users)
-      .where(eq(users.id, userData.id));
-
-    if (existingById) {
-      // User exists with this id - update their profile (email can change, but not id)
-      const { id, ...updateFields } = userData;
-      const [updated] = await db
-        .update(users)
-        .set({
-          ...updateFields,
-          updatedAt: new Date(),
-        })
-        .where(eq(users.id, userData.id))
-        .returning();
-      return updated;
-    }
-
-    // Not found by id - check if email already exists
-    const [existingByEmail] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, userData.email));
-
-    if (existingByEmail) {
-      // Email exists with different OIDC sub - this is a conflict scenario
-      // Cannot safely merge accounts due to FK constraints and session/id mismatch
-      // For MVP: Reject the conflicting login with clear error message
-      throw new Error(
-        `Email ${userData.email} is already registered with a different account. ` +
-        `Please contact support at support@matchmeupfoundry.com for assistance.`
-      );
-    }
-
-    // No existing user found - insert new record
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .returning();
-    return user;
+      .from(profiles)
+      .where(eq(profiles.userId, userId));
+    return profile;
   }
 
-  async updateUserProfile(id: string, data: Partial<User>): Promise<User> {
-    // Filter out undefined values to prevent overwriting existing data with null
-    const updateData: any = { updatedAt: new Date() };
-    Object.keys(data).forEach(key => {
-      if (data[key as keyof typeof data] !== undefined) {
-        updateData[key] = data[key as keyof typeof data];
+  async getUserContext(userId: string): Promise<UserProfileContext | null> {
+    const user = await this.getUserById(userId);
+    if (!user) {
+      return null;
+    }
+
+    let profile = await this.getProfileByUserId(userId);
+    if (!profile) {
+      profile = await this.createDefaultProfile(userId, deriveProfileName(null, user.email));
+    }
+
+    return {
+      user,
+      profile,
+      profileComplete: computeProfileCompletion(user, profile),
+    };
+  }
+
+  async updateProfile(
+    userId: string,
+    data: UpdateProfileInput,
+  ): Promise<UserProfileContext> {
+    const user = await this.getUserById(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const updatePayload: Partial<InsertProfile> = {
+      updatedAt: new Date(),
+      profileStatus: "pending_approval",
+      approvedAt: null,
+      approvedBy: null,
+    };
+
+    if (data.name !== undefined) {
+      const trimmed = data.name.trim();
+      if (!trimmed) {
+        throw new Error("Name cannot be empty");
       }
-    });
-    
-    const [user] = await db
-      .update(users)
-      .set(updateData)
-      .where(eq(users.id, id))
-      .returning();
-    return user;
-  }
+      updatePayload.name = trimmed;
+    }
 
-  async getAllUsers(limit = 20, offset = 0): Promise<PaginatedResult<User>> {
-    const [totalResult] = await db.select({ count: count() }).from(users);
-    const total = Number(totalResult.count);
-    
-    const data = await db
-      .select()
-      .from(users)
-      .orderBy(desc(users.createdAt))
-      .limit(limit)
-      .offset(offset);
-    
+    if ("headline" in data) {
+      updatePayload.headline = normalizeOptionalString(data.headline) ?? null;
+    }
+    if ("bio" in data) {
+      updatePayload.bio = normalizeOptionalString(data.bio) ?? null;
+    }
+    if ("linkedInUrl" in data) {
+      updatePayload.linkedInUrl =
+        normalizeOptionalString(data.linkedInUrl) ?? null;
+    }
+    if ("websiteUrl" in data) {
+      updatePayload.websiteUrl =
+        normalizeOptionalString(data.websiteUrl) ?? null;
+    }
+    if ("major" in data) {
+      updatePayload.major = normalizeOptionalString(data.major) ?? null;
+    }
+    if ("department" in data) {
+      updatePayload.department =
+        normalizeOptionalString(data.department) ?? null;
+    }
+    if ("companyName" in data) {
+      updatePayload.companyName =
+        normalizeOptionalString(data.companyName) ?? null;
+    }
+    if ("startupName" in data) {
+      updatePayload.startupName =
+        normalizeOptionalString(data.startupName) ?? null;
+    }
+    if ("profileImageKey" in data) {
+      updatePayload.profileImageKey =
+        normalizeOptionalString(data.profileImageKey) ?? null;
+    }
+
+    if ("seekingOpportunities" in data && data.seekingOpportunities !== undefined) {
+      updatePayload.seekingOpportunities = data.seekingOpportunities;
+    }
+
+    if ("graduationYear" in data) {
+      updatePayload.graduationYear =
+        data.graduationYear === undefined ? null : data.graduationYear ?? null;
+    }
+
+    if ("employeeCount" in data) {
+      updatePayload.employeeCount =
+        data.employeeCount === undefined ? null : data.employeeCount ?? null;
+    }
+
+    if ("foundingYear" in data) {
+      updatePayload.foundingYear =
+        data.foundingYear === undefined ? null : data.foundingYear ?? null;
+    }
+
+    if ("industry" in data && data.industry !== undefined) {
+      updatePayload.industry = data.industry;
+    }
+
+    const normalizedSkills = normalizeStringArray(data.skills);
+    if (normalizedSkills !== undefined) {
+      updatePayload.skills = normalizedSkills;
+    }
+
+    const normalizedResearchAreas = normalizeStringArray(data.researchAreas);
+    if (normalizedResearchAreas !== undefined) {
+      updatePayload.researchAreas = normalizedResearchAreas;
+    }
+
+    const [updatedProfile] = await db
+      .update(profiles)
+      .set(updatePayload)
+      .where(eq(profiles.userId, userId))
+      .returning();
+
+    if (!updatedProfile) {
+      throw new Error("Profile not found");
+    }
+
     return {
-      data,
-      total,
-      hasMore: offset + data.length < total,
+      user,
+      profile: updatedProfile,
+      profileComplete: computeProfileCompletion(user, updatedProfile),
     };
   }
 
-  async searchUsers(query?: string, limit = 20, offset = 0): Promise<PaginatedResult<User>> {
-    if (!query) {
-      return this.getAllUsers(limit, offset);
-    }
-    
-    const whereClause = or(
-      ilike(users.firstName, `%${query}%`),
-      ilike(users.lastName, `%${query}%`),
-      ilike(users.major, `%${query}%`)
-    );
-    
-    const [totalResult] = await db
-      .select({ count: count() })
-      .from(users)
-      .where(whereClause);
-    const total = Number(totalResult.count);
-    
-    const data = await db
-      .select()
-      .from(users)
-      .where(whereClause)
-      .orderBy(desc(users.createdAt))
-      .limit(limit)
-      .offset(offset);
-    
+  private buildDefaultProfile(userId: string, name: string): InsertProfile {
     return {
-      data,
-      total,
-      hasMore: offset + data.length < total,
+      userId,
+      name,
+      headline: null,
+      bio: null,
+      skills: [],
+      profileImageKey: null,
+      linkedInUrl: null,
+      websiteUrl: null,
+      graduationYear: null,
+      major: null,
+      seekingOpportunities: false,
+      department: null,
+      researchAreas: [],
+      companyName: null,
+      industry: null,
+      employeeCount: null,
+      startupName: null,
+      foundingYear: null,
+      profileStatus: "pending_approval",
+      approvedBy: null,
+      approvedAt: null,
     };
   }
 
-  // Project operations
-  async createProject(project: InsertProject, userId: string): Promise<Project> {
-    const [newProject] = await db
-      .insert(projects)
-      .values({ ...project, userId })
+  private async createDefaultProfile(
+    userId: string,
+    name: string,
+  ): Promise<Profile> {
+    const [created] = await db
+      .insert(profiles)
+      .values(this.buildDefaultProfile(userId, name))
       .returning();
-    return newProject;
-  }
-
-  async getProject(id: string): Promise<Project | undefined> {
-    const [project] = await db.select().from(projects).where(eq(projects.id, id));
-    return project;
-  }
-
-  async getAllProjects(approvedOnly = false, limit = 20, offset = 0): Promise<PaginatedResult<Project>> {
-    if (approvedOnly) {
-      const [totalResult] = await db
-        .select({ count: count() })
-        .from(projects)
-        .where(eq(projects.isApproved, true));
-      const total = Number(totalResult.count);
-      
-      const data = await db
-        .select()
-        .from(projects)
-        .where(eq(projects.isApproved, true))
-        .orderBy(desc(projects.createdAt))
-        .limit(limit)
-        .offset(offset);
-      
-      return {
-        data,
-        total,
-        hasMore: offset + data.length < total,
-      };
-    } else {
-      const [totalResult] = await db
-        .select({ count: count() })
-        .from(projects);
-      const total = Number(totalResult.count);
-      
-      const data = await db
-        .select()
-        .from(projects)
-        .orderBy(desc(projects.createdAt))
-        .limit(limit)
-        .offset(offset);
-      
-      return {
-        data,
-        total,
-        hasMore: offset + data.length < total,
-      };
-    }
-  }
-
-  async searchProjects(query?: string, approvedOnly = false, limit = 20, offset = 0): Promise<PaginatedResult<Project>> {
-    if (!query) {
-      return this.getAllProjects(approvedOnly, limit, offset);
-    }
-    
-    const searchCondition = or(
-      ilike(projects.title, `%${query}%`),
-      ilike(projects.description, `%${query}%`),
-      ilike(projects.company, `%${query}%`)
-    );
-    
-    if (approvedOnly) {
-      const whereClause = and(eq(projects.isApproved, true), searchCondition);
-      
-      const [totalResult] = await db
-        .select({ count: count() })
-        .from(projects)
-        .where(whereClause);
-      const total = Number(totalResult.count);
-      
-      const data = await db
-        .select()
-        .from(projects)
-        .where(whereClause)
-        .orderBy(desc(projects.createdAt))
-        .limit(limit)
-        .offset(offset);
-      
-      return {
-        data,
-        total,
-        hasMore: offset + data.length < total,
-      };
-    } else {
-      const [totalResult] = await db
-        .select({ count: count() })
-        .from(projects)
-        .where(searchCondition);
-      const total = Number(totalResult.count);
-      
-      const data = await db
-        .select()
-        .from(projects)
-        .where(searchCondition)
-        .orderBy(desc(projects.createdAt))
-        .limit(limit)
-        .offset(offset);
-      
-      return {
-        data,
-        total,
-        hasMore: offset + data.length < total,
-      };
-    }
-  }
-
-  async getUserProjects(userId: string): Promise<Project[]> {
-    return db
-      .select()
-      .from(projects)
-      .where(eq(projects.userId, userId))
-      .orderBy(desc(projects.createdAt));
-  }
-
-  async updateProject(id: string, data: Partial<Project>): Promise<Project> {
-    const [project] = await db
-      .update(projects)
-      .set(data)
-      .where(eq(projects.id, id))
-      .returning();
-    return project;
-  }
-
-  async deleteProject(id: string): Promise<void> {
-    await db.delete(projects).where(eq(projects.id, id));
-  }
-
-  async approveProject(id: string): Promise<Project> {
-    const [project] = await db
-      .update(projects)
-      .set({ isApproved: true })
-      .where(eq(projects.id, id))
-      .returning();
-    return project;
-  }
-
-  // Startup operations
-  async createStartup(startup: InsertStartup, userId: string): Promise<Startup> {
-    const [newStartup] = await db
-      .insert(startups)
-      .values({ ...startup, userId })
-      .returning();
-    return newStartup;
-  }
-
-  async getStartup(id: string): Promise<Startup | undefined> {
-    const [startup] = await db.select().from(startups).where(eq(startups.id, id));
-    return startup;
-  }
-
-  async getAllStartups(approvedOnly = false, limit = 20, offset = 0): Promise<PaginatedResult<Startup>> {
-    if (approvedOnly) {
-      const [totalResult] = await db
-        .select({ count: count() })
-        .from(startups)
-        .where(eq(startups.isApproved, true));
-      const total = Number(totalResult.count);
-      
-      const data = await db
-        .select()
-        .from(startups)
-        .where(eq(startups.isApproved, true))
-        .orderBy(desc(startups.createdAt))
-        .limit(limit)
-        .offset(offset);
-      
-      return {
-        data,
-        total,
-        hasMore: offset + data.length < total,
-      };
-    } else {
-      const [totalResult] = await db
-        .select({ count: count() })
-        .from(startups);
-      const total = Number(totalResult.count);
-      
-      const data = await db
-        .select()
-        .from(startups)
-        .orderBy(desc(startups.createdAt))
-        .limit(limit)
-        .offset(offset);
-      
-      return {
-        data,
-        total,
-        hasMore: offset + data.length < total,
-      };
-    }
-  }
-
-  async searchStartups(query?: string, approvedOnly = false, limit = 20, offset = 0): Promise<PaginatedResult<Startup>> {
-    if (!query) {
-      return this.getAllStartups(approvedOnly, limit, offset);
-    }
-    
-    const searchCondition = or(
-      ilike(startups.name, `%${query}%`),
-      ilike(startups.description, `%${query}%`),
-      ilike(startups.tagline, `%${query}%`),
-      ilike(startups.category, `%${query}%`)
-    );
-    
-    if (approvedOnly) {
-      const whereClause = and(eq(startups.isApproved, true), searchCondition);
-      
-      const [totalResult] = await db
-        .select({ count: count() })
-        .from(startups)
-        .where(whereClause);
-      const total = Number(totalResult.count);
-      
-      const data = await db
-        .select()
-        .from(startups)
-        .where(whereClause)
-        .orderBy(desc(startups.createdAt))
-        .limit(limit)
-        .offset(offset);
-      
-      return {
-        data,
-        total,
-        hasMore: offset + data.length < total,
-      };
-    } else {
-      const [totalResult] = await db
-        .select({ count: count() })
-        .from(startups)
-        .where(searchCondition);
-      const total = Number(totalResult.count);
-      
-      const data = await db
-        .select()
-        .from(startups)
-        .where(searchCondition)
-        .orderBy(desc(startups.createdAt))
-        .limit(limit)
-        .offset(offset);
-      
-      return {
-        data,
-        total,
-        hasMore: offset + data.length < total,
-      };
-    }
-  }
-
-  async getUserStartups(userId: string): Promise<Startup[]> {
-    return db
-      .select()
-      .from(startups)
-      .where(eq(startups.userId, userId))
-      .orderBy(desc(startups.createdAt));
-  }
-
-  async updateStartup(id: string, data: Partial<Startup>): Promise<Startup> {
-    const [startup] = await db
-      .update(startups)
-      .set(data)
-      .where(eq(startups.id, id))
-      .returning();
-    return startup;
-  }
-
-  async deleteStartup(id: string): Promise<void> {
-    await db.delete(startups).where(eq(startups.id, id));
-  }
-
-  async approveStartup(id: string): Promise<Startup> {
-    const [startup] = await db
-      .update(startups)
-      .set({ isApproved: true })
-      .where(eq(startups.id, id))
-      .returning();
-    return startup;
-  }
-
-  // Message operations
-  async createMessage(message: InsertMessage): Promise<Message> {
-    const [newMessage] = await db
-      .insert(messages)
-      .values(message)
-      .returning();
-    return newMessage;
-  }
-
-  async getUserMessages(userId: string): Promise<Message[]> {
-    return db
-      .select()
-      .from(messages)
-      .where(or(eq(messages.senderId, userId), eq(messages.receiverId, userId)))
-      .orderBy(desc(messages.createdAt));
-  }
-
-  async getConversation(user1Id: string, user2Id: string): Promise<Message[]> {
-    return db
-      .select()
-      .from(messages)
-      .where(
-        or(
-          and(eq(messages.senderId, user1Id), eq(messages.receiverId, user2Id)),
-          and(eq(messages.senderId, user2Id), eq(messages.receiverId, user1Id))
-        )
-      )
-      .orderBy(messages.createdAt);
-  }
-
-  async markMessageAsRead(id: string): Promise<Message> {
-    const [message] = await db
-      .update(messages)
-      .set({ isRead: true })
-      .where(eq(messages.id, id))
-      .returning();
-    return message;
+    return created;
   }
 }
 

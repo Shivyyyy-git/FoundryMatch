@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
-import viteConfig from "../vite.config";
+import viteConfig from "../vite.config.js";
 import { nanoid } from "nanoid";
 
 const viteLogger = createLogger();
@@ -40,9 +40,22 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
-  app.use(vite.middlewares);
+  // Only apply Vite middleware to non-API routes
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api")) {
+      return next();
+    }
+    vite.middlewares(req, res, next);
+  });
+
+  // Catch-all for React app (only for non-API routes)
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
+
+    // Skip API routes - they should be handled by Express routes
+    if (url.startsWith("/api")) {
+      return next();
+    }
 
     try {
       const clientTemplate = path.resolve(

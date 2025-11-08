@@ -27,177 +27,169 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus } from "lucide-react";
-import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { Project, InsertProject } from "@shared/schema";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertProjectSchema } from "@shared/schema";
+import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 
-interface PaginatedResponse {
-  data: Project[];
-  total: number;
-  hasMore: boolean;
-}
+// Project types matching the API
+type ProjectCategory = "software" | "research" | "product" | "design" | "marketing" | "hardware" | "data_science";
+type CompensationType = "paid" | "equity" | "academic_credit" | "volunteer";
+
+// API response types
+type Project = {
+  id: string;
+  creatorId: string;
+  title: string;
+  description: string;
+  category: ProjectCategory;
+  compensationType: CompensationType;
+  applicationDeadline: string | null;
+  requiredSkills: string[];
+  status: string;
+  createdAt: string;
+  creator: {
+    id: string;
+    email: string;
+    name: string;
+    profileImageKey: string | null;
+  };
+};
+
+type ProjectsResponse = {
+  projects: Project[];
+};
+
+// Form schema matching API
+const createProjectSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200),
+  description: z.string().min(1, "Description is required"),
+  category: z.enum(["software", "research", "product", "design", "marketing", "hardware", "data_science"]),
+  compensationType: z.enum(["paid", "equity", "academic_credit", "volunteer"]),
+  requiredSkills: z.array(z.string()).min(1, "At least one skill is required"),
+  applicationDeadline: z.string().optional().nullable(),
+});
+
+type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
 export default function ProjectGigs() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [compensationFilter, setCompensationFilter] = useState<string>("all");
   const { toast } = useToast();
 
-  const {
-    data,
-    isLoading,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery<PaginatedResponse>({
-    queryKey: ["/api/projects", "approved", searchQuery],
-    queryFn: async ({ pageParam = 0 }) => {
-      const params = new URLSearchParams({
-        approved: "true",
-        limit: "20",
-        offset: String(pageParam),
-      });
+  // Fetch projects from API
+  const { data, isLoading, refetch } = useQuery<ProjectsResponse>({
+    queryKey: ["/api/projects", searchQuery, categoryFilter, compensationFilter],
+    queryFn: async () => {
+      const params = new URLSearchParams();
       if (searchQuery) {
-        params.set("q", searchQuery);
+        params.set("search", searchQuery);
       }
-      const res = await fetch(
-        `/api/projects?${params.toString()}`,
-        { credentials: "include" }
-      );
+      if (categoryFilter !== "all") {
+        params.set("category", categoryFilter);
+      }
+      if (compensationFilter !== "all") {
+        params.set("compensationType", compensationFilter);
+      }
+      
+      const res = await fetch(`/api/projects?${params.toString()}`, {
+        credentials: "include",
+      });
+      if (!res.ok) {
+        throw new Error("Failed to fetch projects");
+      }
       return res.json();
     },
-    getNextPageParam: (lastPage, allPages) => {
-      if (!lastPage.hasMore) return undefined;
-      return allPages.length * 20;
-    },
-    initialPageParam: 0,
   });
 
-  const allProjects = data?.pages.flatMap(page => page.data) ?? [];
-  
-  // Apply client-side filters
-  const projects = allProjects.filter(project => {
-    if (typeFilter !== "all" && project.type !== typeFilter) {
-      return false;
-    }
-    return true;
-  });
+  const projects = data?.projects ?? [];
 
+  // Create project mutation
   const createProjectMutation = useMutation({
-    mutationFn: async (data: InsertProject) => {
-      const res = await apiRequest("POST", "/api/projects", data);
+    mutationFn: async (data: CreateProjectInput) => {
+      const res = await apiRequest("POST", "/api/projects", {
+        ...data,
+        applicationDeadline: data.applicationDeadline || null,
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to create project");
+      }
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       setIsDialogOpen(false);
+      form.reset();
       toast({
         title: "Project submitted!",
-        description: "Your project gig has been submitted for admin approval.",
+        description: "Your project has been submitted for admin approval.",
       });
-      form.reset();
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to create project. Please try again.",
+        description: error.message || "Failed to create project. Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  const form = useForm<InsertProject>({
-    resolver: zodResolver(insertProjectSchema),
+  const form = useForm<CreateProjectInput>({
+    resolver: zodResolver(createProjectSchema),
     defaultValues: {
       title: "",
-      company: "",
-      projectLink: "",
       description: "",
-      skills: [],
-      timeCommitment: "",
-      teamSize: "",
-      deadline: "",
-      type: "volunteer",
+      category: "software",
+      compensationType: "volunteer",
+      requiredSkills: [],
+      applicationDeadline: null,
     },
   });
 
-  const onSubmit = (data: InsertProject) => {
+  const onSubmit = (data: CreateProjectInput) => {
     createProjectMutation.mutate(data);
   };
 
-  const filteredProjects = projects.filter(project =>
-    searchQuery === "" ||
-    project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.company.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Map compensation type to display format
+  const getCompensationDisplay = (type: CompensationType): string => {
+    const map: Record<CompensationType, string> = {
+      paid: "Paid",
+      equity: "Equity",
+      academic_credit: "For Credit",
+      volunteer: "Volunteer",
+    };
+    return map[type];
+  };
 
-  const mockProjects = [
-    {
-      title: "Mobile App Developer",
-      company: "HealthTech Startup",
-      description: "We're building a mobile app to help students track their mental health and wellness. Looking for a React Native developer to join our founding team.",
-      skills: ["React Native", "TypeScript", "Firebase", "UI/UX"],
-      timeCommitment: "10-15 hrs/week",
-      teamSize: "3-4 members",
-      deadline: "Apply by Feb 15",
-      type: "credit" as const
-    },
-    {
-      title: "UX/UI Designer Wanted",
-      company: "Social Impact Project",
-      description: "Design an intuitive interface for a platform connecting volunteers with local nonprofits. Make a real difference in the community.",
-      skills: ["Figma", "UI/UX", "User Research", "Prototyping"],
-      timeCommitment: "8-10 hrs/week",
-      teamSize: "2-3 members",
-      type: "volunteer" as const
-    },
-    {
-      title: "Data Analyst Position",
-      company: "Environmental Research Lab",
-      description: "Analyze climate data and create compelling visualizations for our environmental research project. Work with real-world datasets.",
-      skills: ["Python", "Data Viz", "Statistics", "Pandas"],
-      timeCommitment: "5-8 hrs/week",
-      teamSize: "1-2 members",
-      deadline: "Apply by Feb 20",
-      type: "paid" as const
-    },
-    {
-      title: "Full Stack Developer",
-      company: "EdTech Platform",
-      description: "Build features for an online learning platform used by thousands of students. Work with modern tech stack and agile methodology.",
-      skills: ["React", "Node.js", "MongoDB", "TypeScript"],
-      timeCommitment: "12-15 hrs/week",
-      teamSize: "4-5 members",
-      type: "paid" as const
-    },
-    {
-      title: "Marketing Specialist",
-      company: "Student Startup",
-      description: "Help us grow our user base and build our brand. Create content, manage social media, and develop marketing strategies.",
-      skills: ["Marketing", "Social Media", "Content Creation", "Analytics"],
-      timeCommitment: "6-8 hrs/week",
-      teamSize: "2-3 members",
-      type: "credit" as const
-    },
-    {
-      title: "Backend Engineer",
-      company: "FinTech Project",
-      description: "Develop secure and scalable APIs for a financial services platform. Experience with cloud infrastructure is a plus.",
-      skills: ["Python", "Django", "PostgreSQL", "AWS"],
-      timeCommitment: "10-12 hrs/week",
-      teamSize: "3-4 members",
-      deadline: "Apply by Feb 18",
-      type: "paid" as const
-    }
-  ];
+  // Map category to display format
+  const getCategoryDisplay = (category: ProjectCategory): string => {
+    const map: Record<ProjectCategory, string> = {
+      software: "Software",
+      research: "Research",
+      product: "Product",
+      design: "Design",
+      marketing: "Marketing",
+      hardware: "Hardware",
+      data_science: "Data Science",
+    };
+    return map[category];
+  };
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+          <p className="mt-4 text-muted-foreground">Loading projects...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -234,41 +226,9 @@ export default function ProjectGigs() {
                       name="title"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Project Title</FormLabel>
+                          <FormLabel>Project Title *</FormLabel>
                           <FormControl>
-                            <Input {...field} data-testid="input-project-title" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="company"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Company/Organization</FormLabel>
-                          <FormControl>
-                            <Input {...field} data-testid="input-company" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="projectLink"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Project or Company Link</FormLabel>
-                          <FormControl>
-                            <Input 
-                              {...field} 
-                              value={field.value || ""} 
-                              type="url"
-                              placeholder="https://example.com"
-                              data-testid="input-project-link" 
-                            />
+                            <Input {...field} data-testid="input-project-title" placeholder="e.g., Build a React App" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -279,25 +239,86 @@ export default function ProjectGigs() {
                       name="description"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Description</FormLabel>
+                          <FormLabel>Description *</FormLabel>
                           <FormControl>
-                            <Textarea {...field} data-testid="textarea-description" />
+                            <Textarea 
+                              {...field} 
+                              data-testid="textarea-description" 
+                              placeholder="Describe your project, what you're looking for, and what makes it exciting..."
+                              rows={5}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="category"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Category *</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-category">
+                                  <SelectValue placeholder="Select category" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="software">Software</SelectItem>
+                                <SelectItem value="research">Research</SelectItem>
+                                <SelectItem value="product">Product</SelectItem>
+                                <SelectItem value="design">Design</SelectItem>
+                                <SelectItem value="marketing">Marketing</SelectItem>
+                                <SelectItem value="hardware">Hardware</SelectItem>
+                                <SelectItem value="data_science">Data Science</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="compensationType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Compensation Type *</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-compensation">
+                                  <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="paid">Paid</SelectItem>
+                                <SelectItem value="equity">Equity</SelectItem>
+                                <SelectItem value="academic_credit">Academic Credit</SelectItem>
+                                <SelectItem value="volunteer">Volunteer</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                     <FormField
                       control={form.control}
-                      name="skills"
+                      name="requiredSkills"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Required Skills (comma-separated)</FormLabel>
+                          <FormLabel>Required Skills * (comma-separated)</FormLabel>
                           <FormControl>
                             <Input
-                              {...field}
                               value={Array.isArray(field.value) ? field.value.join(", ") : ""}
-                              onChange={(e) => field.onChange(e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
+                              onChange={(e) => {
+                                const skills = e.target.value
+                                  .split(",")
+                                  .map(s => s.trim())
+                                  .filter(Boolean);
+                                field.onChange(skills);
+                              }}
                               placeholder="React, TypeScript, Node.js"
                               data-testid="input-skills"
                             />
@@ -308,66 +329,32 @@ export default function ProjectGigs() {
                     />
                     <FormField
                       control={form.control}
-                      name="type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Type</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-project-type-form">
-                                <SelectValue placeholder="Select project type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="paid">Paid</SelectItem>
-                              <SelectItem value="credit">For Credit</SelectItem>
-                              <SelectItem value="volunteer">Volunteer</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="timeCommitment"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Time Commitment (optional)</FormLabel>
-                          <FormControl>
-                            <Input {...field} value={field.value || ""} placeholder="10-15 hrs/week" data-testid="input-time-commitment" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="teamSize"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Team Size (optional)</FormLabel>
-                          <FormControl>
-                            <Input {...field} value={field.value || ""} placeholder="3-4 members" data-testid="input-team-size" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="deadline"
+                      name="applicationDeadline"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Application Deadline (optional)</FormLabel>
                           <FormControl>
-                            <Input {...field} value={field.value || ""} placeholder="Apply by Feb 15" data-testid="input-deadline" />
+                            <Input 
+                              {...field}
+                              type="datetime-local"
+                              value={field.value ? new Date(field.value).toISOString().slice(0, 16) : ""}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                field.onChange(value ? new Date(value).toISOString() : null);
+                              }}
+                              data-testid="input-deadline" 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" disabled={createProjectMutation.isPending} data-testid="button-submit-project">
+                    <Button 
+                      type="submit" 
+                      disabled={createProjectMutation.isPending} 
+                      data-testid="button-submit-project"
+                      className="w-full"
+                    >
                       {createProjectMutation.isPending ? "Submitting..." : "Submit Project"}
                     </Button>
                   </form>
@@ -381,17 +368,33 @@ export default function ProjectGigs() {
               <SearchBar 
                 value={searchQuery}
                 onChange={setSearchQuery}
-                placeholder="Search projects by title, company, or description..."
+                placeholder="Search projects by title or description..."
               />
             </div>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-full sm:w-48" data-testid="select-project-type">
-                <SelectValue placeholder="Project Type" />
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-full sm:w-48" data-testid="select-category-filter">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="software">Software</SelectItem>
+                <SelectItem value="research">Research</SelectItem>
+                <SelectItem value="product">Product</SelectItem>
+                <SelectItem value="design">Design</SelectItem>
+                <SelectItem value="marketing">Marketing</SelectItem>
+                <SelectItem value="hardware">Hardware</SelectItem>
+                <SelectItem value="data_science">Data Science</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={compensationFilter} onValueChange={setCompensationFilter}>
+              <SelectTrigger className="w-full sm:w-48" data-testid="select-compensation-filter">
+                <SelectValue placeholder="Compensation" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="credit">For Credit</SelectItem>
+                <SelectItem value="equity">Equity</SelectItem>
+                <SelectItem value="academic_credit">Academic Credit</SelectItem>
                 <SelectItem value="volunteer">Volunteer</SelectItem>
               </SelectContent>
             </Select>
@@ -402,13 +405,17 @@ export default function ProjectGigs() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <p className="text-sm text-muted-foreground">
-            {projects.length} opportunities available
+            {projects.length} {projects.length === 1 ? "opportunity" : "opportunities"} available
           </p>
         </div>
 
         {projects.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No projects found{searchQuery ? " for your search" : ". Be the first to post one!"}!</p>
+            <p className="text-muted-foreground">
+              {searchQuery || categoryFilter !== "all" || compensationFilter !== "all"
+                ? "No projects found matching your filters."
+                : "No projects available yet. Be the first to post one!"}
+            </p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -416,28 +423,15 @@ export default function ProjectGigs() {
               <ProjectCard 
                 key={project.id} 
                 title={project.title}
-                company={project.company}
+                company={project.creator.name}
                 description={project.description}
-                skills={project.skills}
-                type={project.type as "paid" | "credit" | "volunteer"}
-                timeCommitment={project.timeCommitment || ""}
-                teamSize={project.teamSize || ""}
-                deadline={project.deadline || undefined}
+                skills={project.requiredSkills}
+                type={project.compensationType === "paid" ? "paid" : project.compensationType === "academic_credit" ? "credit" : "volunteer"}
+                timeCommitment=""
+                teamSize=""
+                deadline={project.applicationDeadline ? new Date(project.applicationDeadline).toLocaleDateString() : undefined}
               />
             ))}
-          </div>
-        )}
-
-        {hasNextPage && (
-          <div className="mt-8 flex justify-center">
-            <Button 
-              variant="outline" 
-              onClick={() => fetchNextPage()}
-              disabled={isFetchingNextPage}
-              data-testid="button-load-more"
-            >
-              {isFetchingNextPage ? "Loading..." : "Load More Projects"}
-            </Button>
           </div>
         )}
       </div>

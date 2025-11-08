@@ -1,10 +1,30 @@
+import "dotenv/config";
+import cookieParser from "cookie-parser";
+import cors from "cors";
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import helmet from "helmet";
+import passport from "passport";
+import { registerRoutes } from "./routes.js";
+import { setupVite, serveStatic, log } from "./vite.js";
+import { configureGoogleStrategy } from "./auth/googleStrategy.js";
 
 const app = express();
+app.set("trust proxy", 1);
+app.use(helmet());
+app.use(
+  cors({
+    origin:
+      process.env.CLIENT_ORIGIN?.split(",").map((origin) => origin.trim()) ||
+      true,
+    credentials: true,
+  }),
+);
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(passport.initialize());
+
+configureGoogleStrategy();
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -43,8 +63,17 @@ app.use((req, res, next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
+    // Log the full error for debugging
+    console.error("Error:", err);
+    if (err.stack) {
+      console.error("Stack:", err.stack);
+    }
+
     res.status(status).json({ message });
-    throw err;
+    // Don't throw in production to avoid crashing
+    if (process.env.NODE_ENV === "development") {
+      throw err;
+    }
   });
 
   // importantly only setup vite in development and after
@@ -61,11 +90,7 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
+  server.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
   });
 })();

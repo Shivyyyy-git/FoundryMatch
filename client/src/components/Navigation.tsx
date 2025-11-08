@@ -25,7 +25,7 @@ import {
 export function Navigation() {
   const [location] = useLocation();
   const { theme, toggleTheme } = useTheme();
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
 
   const navItems = [
     { path: "/", label: "Home", icon: null },
@@ -37,26 +37,32 @@ export function Navigation() {
   ];
 
   const handleLogin = () => {
-    window.location.href = "/api/login";
+    window.location.href = "/login";
   };
 
-  const handleLogout = () => {
-    window.location.href = "/api/logout";
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (err) {
+      console.error("Logout failed:", err);
+      // Still redirect on error
+      window.location.href = "/";
+    }
   };
 
   const getUserInitials = () => {
     if (!user) return "U";
-    const first = user.firstName?.[0] || "";
-    const last = user.lastName?.[0] || "";
-    return (first + last).toUpperCase() || user.email?.[0]?.toUpperCase() || "U";
+    const name = user.profile?.name || "";
+    const parts = name.split(" ");
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "U";
   };
 
   const getUserDisplayName = () => {
     if (!user) return "User";
-    if (user.firstName || user.lastName) {
-      return `${user.firstName || ""} ${user.lastName || ""}`.trim();
-    }
-    return user.email || "User";
+    return user.profile?.name || user.email || "User";
   };
 
   return (
@@ -121,7 +127,7 @@ export function Navigation() {
                 <DropdownMenuTrigger asChild>
                   <button className="rounded-full" data-testid="button-user-menu">
                     <Avatar className="h-9 w-9">
-                      <AvatarImage src={user.profileImageUrl || undefined} alt={getUserDisplayName()} />
+                      <AvatarImage src={user.profile?.profileImageKey || undefined} alt={getUserDisplayName()} />
                       <AvatarFallback>{getUserInitials()}</AvatarFallback>
                     </Avatar>
                   </button>

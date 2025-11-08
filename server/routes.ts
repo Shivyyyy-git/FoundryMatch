@@ -1,353 +1,151 @@
-import type { Express } from "express";
+import type { Express, NextFunction, Request, Response } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertProjectSchema, insertStartupSchema, insertMessageSchema, updateProfileSchema } from "@shared/schema";
-import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import { z } from "zod";
+import {
+  updateProfileSchema,
+  type UpdateProfileInput,
+} from "../shared/schema.js";
+import {
+  ObjectNotFoundError,
+  ObjectStorageService,
+} from "./objectStorage.js";
+import { storage } from "./storage.js";
+import { requireAuth } from "./auth/middleware.js";
+import authRouter from "./routes/authRoutes.js";
+import projectRouter from "./routes/projectRoutes.js";
+import { csrfProtection } from "./auth/csrf.js";
+import { serializeUserContext } from "./utils/userResponse.js";
 
-// Admin middleware
-const isAdmin = async (req: any, res: any, next: any) => {
-  try {
-    const userId = req.user.claims.sub;
-    const user = await storage.getUser(userId);
-    if (!user || !user.isAdmin) {
-      return res.status(403).json({ message: "Forbidden: Admin access required" });
+type ValidatedRequest<T> = Request & { validatedBody: T };
+
+function validateBody<T>(schema: z.ZodSchema<T>) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const parsed = schema.parse(req.body);
+      (req as ValidatedRequest<T>).validatedBody = parsed;
+      next();
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          message: "Validation failed",
+          errors: error.flatten(),
+        });
+      }
+      next(error);
     }
-    next();
-  } catch (error) {
-    console.error("Error checking admin status:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
+  };
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware setup
-  await setupAuth(app);
+  const objectStorageService = new ObjectStorageService();
 
-  // Object storage routes
-  app.get("/objects/:objectPath(*)", isAuthenticated, async (req, res) => {
-    const userId = req.user?.claims?.sub;
-    const objectStorageService = new ObjectStorageService();
+  app.use("/api/auth", authRouter);
+  app.use("/api/projects", projectRouter);
+
+  app.get("/objects/:objectPath(*)", requireAuth, async (req, res) => {
     try {
+      const authUser = req.authUser;
+      if (!authUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
       const objectFile = await objectStorageService.getObjectEntityFile(
         req.path,
       );
       const canAccess = await objectStorageService.canAccessObjectEntity({
         objectFile,
-        userId: userId,
+        userId: authUser.id,
       });
       if (!canAccess) {
         return res.sendStatus(401);
       }
-      objectStorageService.downloadObject(objectFile, res);
+      await objectStorageService.downloadObject(objectFile, res);
     } catch (error) {
-      console.error("Error checking object access:", error);
+      console.error("Error serving object:", error);
       if (error instanceof ObjectNotFoundError) {
         return res.sendStatus(404);
+      }
+      if ((error as any).status === 401) {
+        return res.status(401).json({ message: "Unauthorized" });
       }
       return res.sendStatus(500);
     }
   });
 
-  app.post("/api/objects/upload", isAuthenticated, async (req, res) => {
-    const objectStorageService = new ObjectStorageService();
+  app.post("/api/objects/upload", requireAuth, async (_req, res) => {
     const uploadURL = await objectStorageService.getObjectEntityUploadURL();
     res.json({ uploadURL });
   });
 
-  app.put("/api/startup-images", isAuthenticated, async (req: any, res) => {
+  app.put(
+    "/api/profile/image",
+    requireAuth,
+    csrfProtection,
+    async (req, res) => {
     if (!req.body.imageURL) {
       return res.status(400).json({ error: "imageURL is required" });
     }
 
-    const userId = req.user?.claims?.sub;
-
     try {
-      const objectStorageService = new ObjectStorageService();
+        const authUser = req.authUser;
+        if (!authUser) {
+          return res.status(401).json({ message: "Unauthorized" });
+        }
       const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
         req.body.imageURL,
         {
-          owner: userId,
+            owner: authUser.id,
           visibility: "public",
         },
       );
 
-      res.status(200).json({
-        objectPath: objectPath,
-      });
+      res.status(200).json({ objectPath });
     } catch (error) {
-      console.error("Error setting startup image:", error);
+      console.error("Error setting profile image:", error);
       res.status(500).json({ error: "Internal server error" });
     }
-  });
+    },
+  );
 
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
+  app.get("/api/auth/user", requireAuth, (req, res) => {
+    if (!req.authContext) {
+      return res.status(404).json({ message: "User not found" });
     }
+    res.json(serializeUserContext(req.authContext));
   });
 
-  // User routes
-  app.get('/api/users', isAuthenticated, async (req, res) => {
-    try {
-      const query = req.query.q as string | undefined;
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
-      const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
-      const result = await storage.searchUsers(query, limit, offset);
-      res.json(result);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      res.status(500).json({ message: "Failed to fetch users" });
+  app.get("/api/profile/me", requireAuth, (req, res) => {
+    if (!req.authContext) {
+      return res.status(404).json({ message: "Profile not found" });
     }
+    res.json(serializeUserContext(req.authContext));
   });
 
-  app.patch('/api/users/profile', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const validated = updateProfileSchema.parse(req.body);
-      const user = await storage.updateUserProfile(userId, validated);
-      res.json(user);
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      if (error instanceof Error && error.name === 'ZodError') {
-        return res.status(400).json({ message: "Invalid profile data" });
+  app.put(
+    "/api/profile",
+    requireAuth,
+    csrfProtection,
+    validateBody(updateProfileSchema),
+    async (req, res) => {
+      if (!req.authUser) {
+        return res.status(401).json({ message: "Unauthorized" });
       }
-      res.status(500).json({ message: "Failed to update profile" });
-    }
-  });
-
-  // Project routes
-  app.get('/api/projects', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      const query = req.query.q as string | undefined;
-      const approvedOnly = req.query.approved === 'true' || !user?.isAdmin;
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
-      const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
-      const result = await storage.searchProjects(query, approvedOnly, limit, offset);
-      res.json(result);
-    } catch (error) {
-      console.error("Error fetching projects:", error);
-      res.status(500).json({ message: "Failed to fetch projects" });
-    }
-  });
-
-  app.post('/api/projects', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const validated = insertProjectSchema.parse(req.body);
-      const project = await storage.createProject(validated, userId);
-      res.json(project);
-    } catch (error) {
-      console.error("Error creating project:", error);
-      res.status(400).json({ message: "Failed to create project" });
-    }
-  });
-
-  app.get('/api/projects/:id', isAuthenticated, async (req, res) => {
-    try {
-      const project = await storage.getProject(req.params.id);
-      if (!project) {
-        return res.status(404).json({ message: "Project not found" });
+      try {
+        const { validatedBody } = req as ValidatedRequest<UpdateProfileInput>;
+        const context = await storage.updateProfile(
+          req.authUser.id,
+          validatedBody,
+        );
+        res.json(serializeUserContext(context));
+      } catch (error) {
+        console.error("Error updating profile:", error);
+        const status =
+          (error as any).message === "Name cannot be empty" ? 400 : 500;
+        res.status(status).json({ message: (error as Error).message });
       }
-      res.json(project);
-    } catch (error) {
-      console.error("Error fetching project:", error);
-      res.status(500).json({ message: "Failed to fetch project" });
-    }
-  });
-
-  app.patch('/api/projects/:id', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      const project = await storage.getProject(req.params.id);
-      
-      if (!project) {
-        return res.status(404).json({ message: "Project not found" });
-      }
-      
-      // Only owner or admin can update
-      if (project.userId !== userId && !user?.isAdmin) {
-        return res.status(403).json({ message: "Forbidden: Can only update your own projects" });
-      }
-      
-      // Prevent non-admins from changing approval status
-      if (!user?.isAdmin && 'isApproved' in req.body) {
-        delete req.body.isApproved;
-      }
-      
-      const updated = await storage.updateProject(req.params.id, req.body);
-      res.json(updated);
-    } catch (error) {
-      console.error("Error updating project:", error);
-      res.status(500).json({ message: "Failed to update project" });
-    }
-  });
-
-  app.delete('/api/projects/:id', isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      await storage.deleteProject(req.params.id);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error deleting project:", error);
-      res.status(500).json({ message: "Failed to delete project" });
-    }
-  });
-
-  app.post('/api/projects/:id/approve', isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const project = await storage.approveProject(req.params.id);
-      res.json(project);
-    } catch (error) {
-      console.error("Error approving project:", error);
-      res.status(500).json({ message: "Failed to approve project" });
-    }
-  });
-
-  // Startup routes
-  app.get('/api/startups', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      const query = req.query.q as string | undefined;
-      const approvedOnly = req.query.approved === 'true' || !user?.isAdmin;
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
-      const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
-      const result = await storage.searchStartups(query, approvedOnly, limit, offset);
-      res.json(result);
-    } catch (error) {
-      console.error("Error fetching startups:", error);
-      res.status(500).json({ message: "Failed to fetch startups" });
-    }
-  });
-
-  app.post('/api/startups', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const validated = insertStartupSchema.parse(req.body);
-      const startup = await storage.createStartup(validated, userId);
-      res.json(startup);
-    } catch (error) {
-      console.error("Error creating startup:", error);
-      res.status(400).json({ message: "Failed to create startup" });
-    }
-  });
-
-  app.get('/api/startups/:id', isAuthenticated, async (req, res) => {
-    try {
-      const startup = await storage.getStartup(req.params.id);
-      if (!startup) {
-        return res.status(404).json({ message: "Startup not found" });
-      }
-      res.json(startup);
-    } catch (error) {
-      console.error("Error fetching startup:", error);
-      res.status(500).json({ message: "Failed to fetch startup" });
-    }
-  });
-
-  app.patch('/api/startups/:id', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      const startup = await storage.getStartup(req.params.id);
-      
-      if (!startup) {
-        return res.status(404).json({ message: "Startup not found" });
-      }
-      
-      // Only owner or admin can update
-      if (startup.userId !== userId && !user?.isAdmin) {
-        return res.status(403).json({ message: "Forbidden: Can only update your own startups" });
-      }
-      
-      // Prevent non-admins from changing approval status
-      if (!user?.isAdmin && 'isApproved' in req.body) {
-        delete req.body.isApproved;
-      }
-      
-      const updated = await storage.updateStartup(req.params.id, req.body);
-      res.json(updated);
-    } catch (error) {
-      console.error("Error updating startup:", error);
-      res.status(500).json({ message: "Failed to update startup" });
-    }
-  });
-
-  app.delete('/api/startups/:id', isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      await storage.deleteStartup(req.params.id);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error deleting startup:", error);
-      res.status(500).json({ message: "Failed to delete startup" });
-    }
-  });
-
-  app.post('/api/startups/:id/approve', isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const startup = await storage.approveStartup(req.params.id);
-      res.json(startup);
-    } catch (error) {
-      console.error("Error approving startup:", error);
-      res.status(500).json({ message: "Failed to approve startup" });
-    }
-  });
-
-  // Message routes
-  app.get('/api/messages', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const messages = await storage.getUserMessages(userId);
-      res.json(messages);
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      res.status(500).json({ message: "Failed to fetch messages" });
-    }
-  });
-
-  app.get('/api/messages/conversation/:otherUserId', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const messages = await storage.getConversation(userId, req.params.otherUserId);
-      res.json(messages);
-    } catch (error) {
-      console.error("Error fetching conversation:", error);
-      res.status(500).json({ message: "Failed to fetch conversation" });
-    }
-  });
-
-  app.post('/api/messages', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const validated = insertMessageSchema.parse({ ...req.body, senderId: userId });
-      const message = await storage.createMessage(validated);
-      res.json(message);
-    } catch (error) {
-      console.error("Error creating message:", error);
-      res.status(400).json({ message: "Failed to send message" });
-    }
-  });
-
-  app.patch('/api/messages/:id/read', isAuthenticated, async (req, res) => {
-    try {
-      const message = await storage.markMessageAsRead(req.params.id);
-      res.json(message);
-    } catch (error) {
-      console.error("Error marking message as read:", error);
-      res.status(500).json({ message: "Failed to mark message as read" });
-    }
-  });
+    },
+  );
 
   const httpServer = createServer(app);
-
   return httpServer;
 }
+

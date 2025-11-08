@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -15,8 +16,8 @@ import { SiGoogle } from "react-icons/si";
 export default function Landing() {
   const [showSignupModal, setShowSignupModal] = useState(false);
 
-  const handleLogin = () => {
-    window.location.href = "/api/login";
+  const handleGoogleAuth = () => {
+    window.location.href = "/api/auth/google";
   };
 
   return (
@@ -31,14 +32,24 @@ export default function Landing() {
             discovering projects, and building the next big thing
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Button 
-              size="lg"
-              onClick={() => setShowSignupModal(true)}
-              data-testid="button-signup"
-            >
-              Sign Up
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
+            <Link href="/register">
+              <Button 
+                size="lg"
+                data-testid="button-signup"
+              >
+                Sign Up
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <Link href="/login">
+              <Button 
+                size="lg"
+                variant="outline"
+                data-testid="button-login"
+              >
+                Sign In
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -151,15 +162,16 @@ export default function Landing() {
           <p className="text-lg mb-8 text-primary-foreground/90">
             Join hundreds of University of Rochester students already building the future
           </p>
-          <Button 
-            size="lg" 
-            variant="secondary"
-            onClick={() => setShowSignupModal(true)}
-            data-testid="button-signup-footer"
-          >
-            Sign Up
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
+          <Link href="/register">
+            <Button 
+              size="lg" 
+              variant="secondary"
+              data-testid="button-signup-footer"
+            >
+              Sign Up
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
         </div>
       </section>
 
@@ -182,7 +194,7 @@ export default function Landing() {
           <div className="flex flex-col gap-4 py-4">
             <Button
               size="lg"
-              onClick={handleLogin}
+              onClick={handleGoogleAuth}
               className="w-full gap-3"
               data-testid="button-google-signup"
             >
