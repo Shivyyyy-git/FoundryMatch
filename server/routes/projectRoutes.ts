@@ -1,4 +1,4 @@
-import type { Request, Response, Router } from "express";
+import { Router, type Request, type Response } from "express";
 import { z } from "zod";
 import {
   insertProjectSchema,
@@ -9,7 +9,7 @@ import { requireAuth, requireAdmin } from "../auth/middleware.js";
 import { csrfProtection } from "../auth/csrf.js";
 import { projectService, type CreateProjectInput, type ProjectFilters } from "../services/projectService.js";
 
-const router: Router = require("express").Router();
+const router = Router();
 
 // Validation schemas
 const createProjectSchema = insertProjectSchema.omit({
